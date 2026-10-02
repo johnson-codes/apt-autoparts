@@ -86,10 +86,18 @@ body.night .top h1,body.night .top .eyebrow{color:#eef1f5}
 .card-nav button:hover{background:var(--line)}
 
 /* parts drawer */
-.drawer{position:fixed;z-index:4;left:18px;top:18px;width:225px;bottom:calc(var(--panelH,150px) + 30px);border-radius:18px;display:flex;flex-direction:column;
+.drawer{position:fixed;z-index:4;left:18px;top:18px;width:260px;bottom:calc(var(--panelH,150px) + 30px);border-radius:18px;display:flex;flex-direction:column;
   transform:translateX(-12px);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
 .drawer.on{opacity:1;transform:none;pointer-events:auto}
 .drawer-head{display:flex;justify-content:space-between;align-items:center;padding:12px 12px 6px 16px;font-size:15px}
+.drawer-toggle{display:flex;align-items:center;justify-content:center;width:32px;height:32px;margin:-4px -4px -4px 0;border:0;border-radius:9px;background:transparent;color:var(--muted)}
+.drawer-toggle:hover{background:var(--line);color:var(--text)}
+.drawer-toggle:focus-visible{outline:2px solid #1554c0;outline-offset:1px}
+.drawer-toggle svg{width:18px;height:18px;fill:currentColor;transition:transform .2s}
+.drawer.folded{bottom:auto}
+.drawer.folded .drawer-head{padding-bottom:12px}
+.drawer.folded .search,.drawer.folded #partList{display:none}
+.drawer.folded .drawer-toggle svg{transform:rotate(180deg)}
 .search{margin:4px 12px 8px;padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--chip);color:var(--text);font:inherit;font-size:13px}
 #partList{overflow:auto;padding:0 8px 10px}
 .grp{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:12px 8px 4px}
@@ -245,10 +253,10 @@ body.night .top h1,body.night .top .eyebrow{color:#eef1f5}
     <svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5z"/></svg>
   </button>
   <ul class="vtype-menu" id="vtypeMenu" role="listbox" aria-label="Choose a vehicle type" tabindex="-1" hidden>
-    <li class="vtype-opt" role="option" id="vt-sedan" data-type="sedan" aria-selected="false" aria-disabled="true"><span class="vtype-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg></span><span>Sedan</span><span class="soon">Coming soon</span></li>
+    <li class="vtype-opt" role="option" id="vt-sedan" data-type="sedan" aria-selected="false"><span class="vtype-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg></span><span>Sedan</span></li>
     <li class="vtype-opt" role="option" id="vt-suv" data-type="suv" aria-selected="true"><span class="vtype-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 5H3c-1.1 0-2 .89-2 2v9h2c0 1.65 1.34 3 3 3s3-1.35 3-3h5.5c0 1.65 1.34 3 3 3s3-1.35 3-3H23v-5l-6-6zM3 11V7h4v4H3zm3 6.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM13 11H9V7h4v4zm4.5 6.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM15 11V7h1l4 4h-5z"/></svg></span><span>SUV</span></li>
-    <li class="vtype-opt" role="option" id="vt-pickup" data-type="pickup" aria-selected="false" aria-disabled="true"><span class="vtype-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></span><span>Pickup</span><span class="soon">Coming soon</span></li>
-    <li class="vtype-opt" role="option" id="vt-convertible" data-type="convertible" aria-selected="false" aria-disabled="true"><span class="vtype-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg></span><span>Convertible</span><span class="soon">Coming soon</span></li>
+    <li class="vtype-opt" role="option" id="vt-pickup" data-type="pickup" aria-selected="false"><span class="vtype-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></span><span>Pickup</span></li>
+    <li class="vtype-opt" role="option" id="vt-convertible" data-type="convertible" aria-selected="false"><span class="vtype-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg></span><span>Convertible</span></li>
   </ul>
 </div>
 <script>
@@ -270,14 +278,19 @@ body.night .top h1,body.night .top .eyebrow{color:#eef1f5}
     menu.hidden = true; btn.setAttribute('aria-expanded', 'false');
     if (refocus) btn.focus();
   };
-  const choose = o => {
-    if (o.getAttribute('aria-disabled') === 'true') return;
+  const show = o => {
     opts.forEach(x => x.setAttribute('aria-selected', x === o ? 'true' : 'false'));
     document.getElementById('vtypeName').textContent = o.querySelector('span:not(.vtype-ico):not(.soon)').textContent;
     document.getElementById('vtypeIco').innerHTML = o.querySelector('.vtype-ico').outerHTML;
+  };
+  const choose = o => {
+    if (o.getAttribute('aria-disabled') === 'true') return;
+    show(o);
     document.dispatchEvent(new CustomEvent('vehicletypechange', { detail: o.dataset.type }));
     close();
   };
+  // keeps the button in step when the type is changed from script (window.aptExplorer.setVariant)
+  window.aptShowVehicleType = type => { const o = opts.find(x => x.dataset.type === type); if (o) show(o); };
   btn.addEventListener('click', () => menu.hidden ? open() : close());
   opts.forEach((o, i) => {
     o.addEventListener('click', () => choose(o));
@@ -298,10 +311,26 @@ body.night .top h1,body.night .top .eyebrow{color:#eef1f5}
 })();
 </script>
 <aside id="drawer" class="drawer glass on" aria-label="Parts list">
-  <div class="drawer-head"><strong>All parts</strong></div>
+  <div class="drawer-head"><strong id="drawerTitle">All parts</strong><button class="drawer-toggle" id="drawerToggle" aria-expanded="true" aria-controls="drawerBody" aria-label="Hide parts list" title="Hide parts list"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.41 15.41 12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg></button></div>
+  <div id="drawerBody" style="display:contents">
   <input id="search" class="search" type="search" placeholder="Search parts…" aria-label="Search parts">
   <div id="partList"></div>
+  </div>
 </aside>
+<script>
+(() => {
+  const d = document.getElementById('drawer'), t = document.getElementById('drawerToggle');
+  const set = folded => {
+    d.classList.toggle('folded', folded);
+    t.setAttribute('aria-expanded', String(!folded));
+    const label = folded ? 'Show parts list' : 'Hide parts list';
+    t.setAttribute('aria-label', label); t.title = label;
+    try { localStorage.setItem('aptDrawerFolded', folded ? '1' : '0'); } catch (e) {}
+  };
+  try { if (localStorage.getItem('aptDrawerFolded') === '1') set(true); } catch (e) {}
+  t.addEventListener('click', () => set(!d.classList.contains('folded')));
+})();
+</script>
 
 <section id="card" class="card glass" aria-live="polite">
   <div class="card-top"><span class="chip" id="cardCat"></span><button class="x" id="cardClose" aria-label="Close">×</button></div>
@@ -713,6 +742,13 @@ const G = {};
 const HINGE = V3(1.11, 1.045, 0);   // pivot sits just under the hood skin at its rear edge
 G.hood = new THREE.Group(); G.hood.position.copy(HINGE); car.add(G.hood);
 G.car = car;
+// body styles: each type swaps the upper body (cabin, glass, roof or bed); everything below the beltline is shared
+const TYPES = ['sedan', 'suv', 'pickup', 'convertible'];
+const TYPE_NAMES = {sedan:'sedan', suv:'SUV', pickup:'pickup truck', convertible:'convertible'};
+const VC = {}, VS = {};
+TYPES.forEach(k => { VC[k] = new THREE.Group(); car.add(VC[k]); VS[k] = new THREE.Group(); VS[k].name = 'vs-' + k; side.add(VS[k]); });
+let carType = 'suv';
+const BRAKE = {};   // high-mount brake light hotspot per body style
 const toHood = g => g.translate(-HINGE.x, -HINGE.y, 0);
 const HOOD_OPEN = 1.05;
 const ROD_PIVOT = V3(1.95, 0.935, 0.50), ROD_TOP0 = V3(1.85, 1.04, 0.50);   // pivot, and the hood-underside point it props (hood closed)
@@ -740,7 +776,7 @@ await checkpoint(35, 'Building the vehicle…');
   s.quadraticCurveTo(0.22, 1.625, 0.06, 1.635);
   s.lineTo(-1.55, 1.642); s.quadraticCurveTo(-1.86, 1.64, -1.98, 1.55);
   s.lineTo(-2.2104, 0.98);
-  add(sculpt(extrude(s, GH*2, 0.07, {seg:6, curve:22}), dCab, 0.05), M.paint);
+  add(sculpt(extrude(s, GH*2, 0.07, {seg:6, curve:22}), dCab, 0.05), M.paint, VC.suv);
 }
 function slopePanel(p0, p1, t0, t1, hw, off, outHint){
   const d = p1.clone().sub(p0), nrm = V2(d.y, -d.x).normalize(); if(nrm.dot(outHint) < 0) nrm.negate();
@@ -755,13 +791,13 @@ function slopePanel(p0, p1, t0, t1, hw, off, outHint){
   deform(g, dCab); g.computeVertexNormals(); return g;
 }
 add(slopePanel(V2(1.25,0.98), V2(0.32,1.565), 0.17, 0.93, 0.735, 0.004, V2(1,1)), M.glass);
-add(slopePanel(V2(-2.2104,0.98), V2(-1.98,1.55), 0.405, 0.93, 0.70, 0.004, V2(-1,0.3)), M.glass);
+add(slopePanel(V2(-2.2104,0.98), V2(-1.98,1.55), 0.405, 0.93, 0.70, 0.004, V2(-1,0.3)), M.glass, VC.suv);
 add(roundedBox(0.24, 0.05, 1.20, 0.015), M.trim, car, null, [1.13, 1.045, 0]);                  // cowl
 /* wipers: pivot cap + arm + rubber blade on the glass; ang swings them up from parked. n = outward glass normal (x,y); len < 0 runs toward -z */
-function wiper(x, y, z, n, len, ang){
+function wiper(x, y, z, n, len, ang, parent){
   const up = V3(n[0], n[1], 0).normalize(), ax = V3(0, 0, 1), sl = ax.clone().cross(up);
   const p = dCab(x, y, z), g = new THREE.Group(); g.position.set(p[0], p[1], p[2]);
-  g.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(ax, up, sl)); car.add(g);
+  g.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(ax, up, sl)); (parent || car).add(g);
   const a = new THREE.Group(); a.rotation.y = ang; g.add(a);
   const L = Math.abs(len), sx = Math.sign(len);
   add(new THREE.CylinderGeometry(0.02, 0.025, 0.032, 18), M.gloss, g, null, [0, 0.016, 0]);
@@ -771,28 +807,31 @@ function wiper(x, y, z, n, len, ang){
 }
 wiper(1.036, 1.115, 0.64, [0.532, 0.846], -0.60, 0.85);   // passenger-side pivot (shown mid-sweep)
 wiper(1.036, 1.115, -0.02, [0.532, 0.846], -0.62, 0.85);  // driver-side pivot
-wiper(-2.117, 1.225, 0.0, [-0.927, 0.375], -0.46, -0.6);  // rear
+wiper(-2.117, 1.225, 0.0, [-0.927, 0.375], -0.46, -0.6, VC.suv);  // rear (SUV only)
 
 /* side glass + trim (on +z cabin side) */
-function onCab(pts, off, mat, part, depth, holes){
+function onCab(pts, off, mat, part, depth, holes, parent){
   const s = new THREE.Shape(pts); (holes || []).forEach(h => s.holes.push(new THREE.Path(h)));
   let g = depth ? new THREE.ExtrudeGeometry(s, {depth, bevelEnabled:false, curveSegments:10}) : new THREE.ShapeGeometry(s, 10);
   g.translate(0, 0, GH + off);
-  return add(sculpt(g, dCab, 0.035, 50), mat, side, part);
+  return add(sculpt(g, dCab, 0.035, 50), mat, parent || side, part);
 }
+// side window opening: black surround, glass, chrome reveal, plus pillar trims
+function sideGlass(dlo, trims, parent){
+  const pts = dlo.getPoints(10);
+  onCab(offsetPts(pts, 0.012), 0.002, M.gloss, null, 0, null, parent);
+  onCab(pts, 0.004, M.glass, null, 0, null, parent);
+  onCab(offsetPts(pts, 0.025), 0.005, M.chrome, null, 0, [offsetPts(pts, 0.013)], parent);
+  trims.forEach(t => onCab(toV2(t), 0.007, M.gloss, null, 0, null, parent));
+}
+const B_PILLAR = [[-0.47,1.13],[-0.585,1.13],[-0.62,1.55],[-0.505,1.55]], QUARTER_TRIM = [[0.70,1.14],[0.89,1.13],[0.86,1.25],[0.64,1.235]];
 {
   const dlo = new THREE.Shape();
   dlo.moveTo(0.73, 1.16); dlo.lineTo(0.23, 1.475); dlo.quadraticCurveTo(0.16, 1.515, 0.04, 1.515);
   dlo.lineTo(-1.45, 1.52); dlo.quadraticCurveTo(-1.74, 1.52, -1.86, 1.43);
   dlo.lineTo(-1.93, 1.27); dlo.quadraticCurveTo(-1.945, 1.235, -1.90, 1.235);
   dlo.lineTo(-1.62, 1.235); dlo.lineTo(-1.40, 1.19);
-  const pts = dlo.getPoints(10);
-  onCab(offsetPts(pts, 0.012), 0.002, M.gloss);
-  onCab(pts, 0.004, M.glass);
-  onCab(offsetPts(pts, 0.025), 0.005, M.chrome, null, 0, [offsetPts(pts, 0.013)]);
-  onCab(toV2([[-0.47,1.13],[-0.585,1.13],[-0.62,1.55],[-0.505,1.55]]), 0.007, M.gloss);
-  onCab(toV2([[-1.33,1.15],[-1.42,1.15],[-1.565,1.55],[-1.475,1.55]]), 0.007, M.gloss);
-  onCab(toV2([[0.70,1.14],[0.89,1.13],[0.86,1.25],[0.64,1.235]]), 0.007, M.gloss);
+  sideGlass(dlo, [B_PILLAR, [[-1.33,1.15],[-1.42,1.15],[-1.565,1.55],[-1.475,1.55]], QUARTER_TRIM], VS.suv);
 }
 
 /* ================= roof, spoiler, fin, rails ================= */
@@ -801,23 +840,97 @@ function onCab(pts, off, mat, part, depth, holes){
   s.moveTo(0.20, 1.605); s.quadraticCurveTo(0.14, 1.64, 0.0, 1.646);
   s.lineTo(-1.55, 1.654); s.quadraticCurveTo(-1.84, 1.652, -1.95, 1.578);
   s.lineTo(-1.85, 1.57); s.lineTo(0.12, 1.57);
-  roofParts.push(add(sculpt(extrude(s, 1.28, 0.018, {seg:3, curve:16}), dCab, 0.05, 45), M.roofBlk));
+  roofParts.push(add(sculpt(extrude(s, 1.28, 0.018, {seg:3, curve:16}), dCab, 0.05, 45), M.roofBlk, VC.suv));
 
   const sp = new THREE.Shape();
   sp.moveTo(-1.78, 1.657); sp.lineTo(-2.06, 1.628); sp.quadraticCurveTo(-2.085, 1.616, -2.06, 1.606);
   sp.lineTo(-1.96, 1.588); sp.lineTo(-1.84, 1.612);
-  roofParts.push(add(sculpt(extrude(sp, 1.30, 0.014, {seg:3, curve:10}), dCab, 0.05, 45), M.roofBlk));
+  roofParts.push(add(sculpt(extrude(sp, 1.30, 0.014, {seg:3, curve:10}), dCab, 0.05, 45), M.roofBlk, VC.suv));
 
   const fin = new THREE.Shape();
   fin.moveTo(-1.56, 1.655); fin.quadraticCurveTo(-1.69, 1.74, -1.79, 1.655);
-  roofParts.push(add(sculpt(extrude(fin, 0.055, 0.012, {seg:2, curve:12}), dCab, 0.03, 45), M.roofBlk));
+  roofParts.push(add(sculpt(extrude(fin, 0.055, 0.012, {seg:2, curve:12}), dCab, 0.03, 45), M.roofBlk, VC.suv));
 
   [0.54, -0.54].forEach(z => {
     const c = new THREE.CatmullRomCurve3([V3(-0.02,1.678,z), V3(-0.7,1.694,z), V3(-1.4,1.696,z), V3(-1.84,1.682,z)]);
-    add(deform(new THREE.TubeGeometry(c, 60, 0.016, 10, false), dCab), M.satin);
-    [-0.04, -0.95, -1.80].forEach(x => { const g = roundedBox(0.13, 0.045, 0.04, 0.012); g.translate(x, 1.668, z); add(deform(g, dCab), M.gloss); });
+    add(deform(new THREE.TubeGeometry(c, 60, 0.016, 10, false), dCab), M.satin, VC.suv);
+    [-0.04, -0.95, -1.80].forEach(x => { const g = roundedBox(0.13, 0.045, 0.04, 0.012); g.translate(x, 1.668, z); add(deform(g, dCab), M.gloss, VC.suv); });
   });
-  add(deform(facePanel(roundedPoly([[-0.2,1.598],[0.2,1.598],[0.2,1.606],[-0.2,1.606]], 0.003), null, 0.01, 0, -2.062, -1, 0, 1.602), dCab), M.tail, car, 'brakelight');
+  add(deform(facePanel(roundedPoly([[-0.2,1.598],[0.2,1.598],[0.2,1.606],[-0.2,1.606]], 0.003), null, 0.01, 0, -2.062, -1, 0, 1.602), dCab), M.tail, VC.suv, 'brakelight');
+  BRAKE.suv = {a:dCab(-2.066, 1.602, 0), n:[-1, 0.45, 0]};
+}
+
+/* ================= sedan: shorter greenhouse, sloped rear window onto the trunk deck ================= */
+{
+  const s = new THREE.Shape();
+  s.moveTo(1.25, 0.98); s.lineTo(0.32, 1.565);
+  s.quadraticCurveTo(0.22, 1.625, 0.06, 1.635);
+  s.lineTo(-0.85, 1.63); s.quadraticCurveTo(-1.10, 1.62, -1.25, 1.52);
+  s.lineTo(-1.68, 1.16); s.lineTo(-1.70, 0.98);
+  add(sculpt(extrude(s, GH*2, 0.07, {seg:6, curve:22}), dCab, 0.05), M.paint, VC.sedan);
+  const p0 = V2(-1.25, 1.52), p1 = V2(-1.68, 1.16), d = p1.clone().sub(p0);
+  add(slopePanel(p0, p1, 0.10, 0.90, 0.66, 0.004, V2(-1, 1)), M.glass, VC.sedan);
+  // brake light just inside the top of the rear window
+  const nrm = V2(d.y, -d.x).normalize(); if(nrm.x > 0) nrm.negate();
+  const q = p0.clone().add(d.clone().multiplyScalar(0.13)).add(nrm.clone().multiplyScalar(0.012)), qp = dCab(q.x, q.y, 0);
+  add(roundedBox(0.05, 0.016, 0.40, 0.006), M.tail, VC.sedan, 'brakelight', qp).rotation.z = Math.atan2(d.y, d.x);
+  BRAKE.sedan = {a:qp, n:[nrm.x, nrm.y, 0]};
+  const dlo = new THREE.Shape();
+  dlo.moveTo(0.73, 1.16); dlo.lineTo(0.23, 1.475); dlo.quadraticCurveTo(0.16, 1.515, 0.04, 1.515);
+  dlo.lineTo(-0.78, 1.51); dlo.quadraticCurveTo(-1.00, 1.505, -1.14, 1.40);
+  dlo.lineTo(-1.40, 1.215); dlo.quadraticCurveTo(-1.43, 1.19, -1.38, 1.19);
+  sideGlass(dlo, [B_PILLAR, QUARTER_TRIM], VS.sedan);
+}
+
+/* ================= pickup: crew cab + open bed ================= */
+{
+  const s = new THREE.Shape();
+  s.moveTo(1.25, 0.98); s.lineTo(0.32, 1.565);
+  s.quadraticCurveTo(0.22, 1.625, 0.06, 1.635);
+  s.lineTo(-1.15, 1.64); s.quadraticCurveTo(-1.33, 1.64, -1.36, 1.50);
+  s.lineTo(-1.37, 0.98);
+  add(sculpt(extrude(s, GH*2, 0.07, {seg:6, curve:22}), dCab, 0.05), M.paint, VC.pickup);
+  // cab back: rear window in a black surround, brake light above it
+  const back = (pts, r, x, mat, part, depth, py) => add(deform(facePanel(roundedPoly(pts, r), null, depth, 0, x, -1, 0, py), dCab), mat, VC.pickup, part);
+  back([[-0.55,1.20],[0.55,1.20],[0.55,1.45],[-0.55,1.45]], 0.03, -1.369, M.gloss, null, 0.008, 1.33);
+  back([[-0.52,1.22],[0.52,1.22],[0.52,1.43],[-0.52,1.43]], 0.025, -1.372, M.glass, null, 0.008, 1.33);
+  back([[-0.16,1.468],[0.16,1.468],[0.16,1.488],[-0.16,1.488]], 0.006, -1.372, M.tail, 'brakelight', 0.012, 1.478);
+  BRAKE.pickup = {a:dCab(-1.376, 1.478, 0), n:[-1, 0.1, 0]};
+  const dlo = new THREE.Shape();
+  dlo.moveTo(0.73, 1.16); dlo.lineTo(0.23, 1.475); dlo.quadraticCurveTo(0.16, 1.515, 0.04, 1.515);
+  dlo.lineTo(-1.06, 1.52); dlo.quadraticCurveTo(-1.20, 1.52, -1.24, 1.44);
+  dlo.lineTo(-1.26, 1.22); dlo.quadraticCurveTo(-1.265, 1.19, -1.22, 1.19);
+  sideGlass(dlo, [B_PILLAR, QUARTER_TRIM], VS.pickup);
+  // bed: side walls carry the body sides up; bulkhead, tailgate and a black liner floor span the width
+  const wall = new THREE.Shape(toV2([[-1.41,1.02],[-1.41,1.30],[-2.19,1.30],[-2.19,1.02]]));
+  add(sculpt(extrude(wall, 0.07, 0.012, {seg:3, curve:6, z:HW - 0.035}), dBody, 0.04), M.paint, VS.pickup);
+  const rail = roundedBox(0.80, 0.022, 0.09, 0.008); rail.translate(-1.80, 1.311, HW - 0.035);
+  add(deform(rail, dBody), M.trim, VS.pickup);
+  const wide = (w, h, x, y, mat) => { const g = roundedBox(w, h, 2*HW - 0.06, 0.012); g.translate(x, y, 0); return add(deform(g, dBody), mat, VC.pickup); };
+  wide(0.05, 0.26, -1.425, 1.17, M.paint);    // bulkhead
+  wide(0.05, 0.022, -1.425, 1.311, M.trim);   // bulkhead cap
+  wide(0.06, 0.25, -2.17, 1.175, M.paint);    // tailgate
+  wide(0.74, 0.05, -1.79, 1.175, M.trim);     // bed liner floor
+  const h = roundedBox(0.012, 0.035, 0.22, 0.008); h.translate(-2.203, 1.25, 0); add(deform(h, dBody), M.trim, VC.pickup);   // tailgate handle
+}
+
+/* ================= convertible: low windscreen, open cockpit, soft-top boot ================= */
+{
+  const p0 = V2(1.25, 0.98), p1 = V2(0.32, 1.565), T1 = 0.78;
+  add(slopePanel(p0, p1, 0.17, T1, 0.735, 0.004, V2(1, 1)), M.glass, VC.convertible);
+  const at = t => V2(p0.x + (p1.x - p0.x)*t, p0.y + (p1.y - p0.y)*t);
+  const tube = (pts, r, mat, def, parent) => add(deform(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, r, 10, false), def), mat, parent || VC.convertible);
+  // windscreen frame: A-pillars up the glass edges and a header across the top
+  for(const z of [0.75, -0.75]) tube([0.15, 0.45, T1 + 0.01].map(t => { const q = at(t); return V3(q.x, q.y + 0.004, z); }), 0.03, M.paint, dCab);
+  { const q = at(T1 + 0.01); tube([-0.76, -0.38, 0, 0.38, 0.76].map(z => V3(q.x, q.y + 0.004, z)), 0.035, M.paint, dCab); }
+  // mirror sail (the mirror itself is shared) and black cockpit rims along the door tops
+  const sail = roundedBox(0.22, 0.12, 0.07, 0.025), sp = dCab(0.80, 1.14, 0.80); sail.translate(sp[0], sp[1], sp[2]); add(sail, M.paint, VS.convertible);
+  const rimY = x => 1.075 + (0.86 - Math.min(x, 0.86)) / 2.21 * 0.035 + 0.012;
+  tube([0.92, 0.3, -0.4, -1.0, -1.55].map(x => V3(x, rimY(x), 0.80)), 0.018, M.trim, dBody, VS.convertible);
+  // folded soft top behind the rear seats; brake light on the trunk lid
+  const boot = roundedBox(0.30, 0.07, 1.56, 0.03); boot.translate(-1.80, 1.19, 0); add(deform(boot, dBody), M.roofBlk, VC.convertible);
+  add(roundedBox(0.035, 0.02, 0.34, 0.006), M.tail, VC.convertible, 'brakelight', [-2.10, 1.186, 0]);
+  BRAKE.convertible = {a:[-2.11, 1.20, 0], n:[-0.5, 1, 0]};
 }
 
 /* ================= front fender (right; mirrored) ================= */
@@ -1348,6 +1461,7 @@ xrayHide.forEach(m => m.castShadow = false);
 
 /* mirror the right-hand side to the left */
 const sideL = side.clone(); sideL.scale.z = -1; car.add(sideL);
+const VSL = {}; TYPES.forEach(k => VSL[k] = sideL.getObjectByName('vs-' + k));
 sideL.traverse(o => {
  if(o.userData.part === 'handleFR') o.userData.part = 'handleFL';
  if(o.userData.part === 'handleRR') o.userData.part = 'handleRL';
@@ -1531,6 +1645,13 @@ cab(roundedBox(0.40, 0.22, 1.52, 0.06), IM.dash, [0.75, 1.02, 0]);
     cab(roundedBox(0.20, 0.07, 0.10, 0.03), IM.dumK, [0.36, 0.44, DZ + sd*0.12]);
   });
 }
+// convertible cockpit: floor and inner walls, only seen through the open top
+const tub = new THREE.Group(); tub.visible = false; cabin.add(tub);
+{
+  const m = inMask(std({color:col('#24272c'), roughness:0.9}));
+  [[2.62,0.04,1.64,-0.36,0.54,0], [2.62,0.54,0.04,-0.36,0.81,0.82], [2.62,0.54,0.04,-0.36,0.81,-0.82], [0.04,0.62,1.64,-1.68,0.85,0], [0.04,0.5,1.64,0.97,0.83,0]]
+    .forEach(([w,h,d,x,y,z]) => { const o = new THREE.Mesh(roundedBox(w, h, d, 0.015), m); o.position.set(x, y, z); tub.add(o); });
+}
 // anything solid drawn in front of the glass (wipers, mirrors, pillars) clears the mask again
 scene.traverse(o => { const m = o.material; if(!o.isMesh || !m || m === M.glass || m.transparent) return;
   m.stencilWrite = true; m.stencilRef = 0; m.stencilFunc = THREE.AlwaysStencilFunc; m.stencilZPass = THREE.ReplaceStencilOp; });
@@ -1540,6 +1661,14 @@ const tintScene = new THREE.Scene(), tintCam = new THREE.OrthographicCamera(-1, 
   const m = new THREE.MeshBasicMaterial({color:0x05070a, transparent:true, opacity:0.42, depthTest:false, depthWrite:false});
   m.stencilWrite = true; m.stencilRef = 3; m.stencilFunc = THREE.EqualStencilFunc; m.stencilZPass = THREE.KeepStencilOp;
   const q = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), m); q.frustumCulled = false; tintScene.add(q);
+}
+const tintMat = tintScene.children[0].material;
+// convertible: an invisible volume over the open cockpit writes the same stencil bit as glass, so the interior pass shows through the open top
+{
+  const s = new THREE.Shape(toV2([[0.99,1.085],[0.50,1.42],[0.50,1.60],[-1.66,1.60],[-1.66,1.085]]));
+  const m = new THREE.MeshBasicMaterial({transparent:true, opacity:0, colorWrite:false, depthWrite:false});
+  m.stencilWrite = true; m.stencilRef = 1; m.stencilFunc = THREE.AlwaysStencilFunc; m.stencilZPass = THREE.ReplaceStencilOp;
+  const o = add(extrude(s, 1.60, 0), m, VC.convertible); o.castShadow = false; o.raycast = () => {};
 }
 
 await checkpoint(92, 'Connecting part details…');
@@ -1914,6 +2043,8 @@ function pickAt(cx, cy){
   for(const h of hits){
     const o = h.object;
     if(o.userData.overlay) continue;
+    let hid = false; for(let q = o.parent; q; q = q.parent) if(!q.visible){ hid = true; break; }
+    if(hid) continue;
     const id = o.userData.part || null;
     if(xray && SHELL.has(o.material)){ if(fallback === null) fallback = id; continue; }
     return id;
@@ -2045,7 +2176,7 @@ function sightBlocked(world){
 }
 function refreshSight(){
   // only re-snapshot when the view or the car has actually changed, and never more often than SIGHT_EVERY
-  const st = [S.hood, S.front, S.rear, S.under, S.steer].map(v => v.toFixed(3)).join() + (xray ? 'x' : '');
+  const st = [S.hood, S.front, S.rear, S.under, S.steer].map(v => v.toFixed(3)).join() + (xray ? 'x' : '') + carType;
   const changed = !sightReady || st !== sightState || !camera.matrixWorld.equals(sightLastCam);
   if(changed && elapsed - sightAt >= SIGHT_EVERY){ takeSightSnapshot(); sightAt = elapsed; sightState = st; sightLastCam.copy(camera.matrixWorld); }
 }
@@ -2142,6 +2273,19 @@ function tick(){
 window.aptExplorer = { parts: PARTS.map(p => p.id), select, deselect, setView, setHood, setFront, setRear, setUnder, setXray,
   snap(){ for(const key of ['hood','front','rear','under','lights','steer']) S[key] = S[key+'T']; theta = tTheta; phi = tPhi; radius = tRadius; frameK = sel === null ? 1 + 0.16*Math.max(1.3*S.front, S.rear) + 0.02*S.hood + 0.22*S.under : 1; frameX = sel === null ? 1.8*S.front - 1.0*S.rear + 1.65*S.under : 0;
     if(sel !== null && follow !== false){ PMAP[sel].anc[follow].getWorldPosition(tmpV); tTarget.copy(CENTER).lerp(tmpV, 0.82); } target.copy(tTarget); } };
+function setVariant(type){
+  if(!VC[type]) return;
+  carType = type;
+  TYPES.forEach(k => { VC[k].visible = VS[k].visible = VSL[k].visible = k === type; });
+  tub.visible = type === 'convertible'; tintMat.opacity = type === 'convertible' ? 0.12 : 0.42;
+  const b = BRAKE[type], p = PMAP.brakelight;
+  p.anc[0].position.set(b.a[0], b.a[1], b.a[2]); p.nrm[0].set(b.n[0], b.n[1], b.n[2]).normalize();
+  if(window.aptShowVehicleType) window.aptShowVehicleType(type);
+  canvas.setAttribute('aria-label', 'Interactive 3D ' + TYPE_NAMES[type] + '. Drag to rotate, scroll or pinch to zoom, click a part for details.');
+}
+setVariant(carType);
+window.aptExplorer.setVariant = setVariant;
+document.addEventListener('vehicletypechange', e => setVariant(e.detail));
 await checkpoint(97, 'Rendering the vehicle…');
 tick();
 })().catch(error => { console.error(error); window.aptLoad.fail(); });
