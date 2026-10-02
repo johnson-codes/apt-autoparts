@@ -801,30 +801,30 @@ const B_PILLAR = [[-0.47,1.13],[-0.585,1.13],[-0.62,1.55],[-0.505,1.55]], QUARTE
   const s = new THREE.Shape();
   s.moveTo(1.25, 0.98); s.lineTo(0.32, 1.565);
   s.quadraticCurveTo(0.22, 1.625, 0.06, 1.635);
-  s.lineTo(-1.15, 1.64); s.quadraticCurveTo(-1.33, 1.64, -1.36, 1.50);
-  s.lineTo(-1.37, 0.98);
+  s.lineTo(-0.994, 1.64); s.quadraticCurveTo(-1.174, 1.64, -1.204, 1.50);
+  s.lineTo(-1.214, 0.98);
   add(sculpt(extrude(s, GH*2, 0.07, {seg:6, curve:22}), dCab, 0.05), M.paint, VC.pickup);
   // cab back: rear window in a black surround, brake light above it
   const back = (pts, r, x, mat, part, depth, py) => add(deform(facePanel(roundedPoly(pts, r), null, depth, 0, x, -1, 0, py), dCab), mat, VC.pickup, part);
-  back([[-0.55,1.20],[0.55,1.20],[0.55,1.45],[-0.55,1.45]], 0.03, -1.369, M.gloss, null, 0.008, 1.33);
-  back([[-0.52,1.22],[0.52,1.22],[0.52,1.43],[-0.52,1.43]], 0.025, -1.372, M.glass, null, 0.008, 1.33);
-  back([[-0.16,1.468],[0.16,1.468],[0.16,1.488],[-0.16,1.488]], 0.006, -1.372, M.tail, 'brakelight', 0.012, 1.478);
-  BRAKE.pickup = {a:dCab(-1.376, 1.478, 0), n:[-1, 0.1, 0]};
+  back([[-0.55,1.20],[0.55,1.20],[0.55,1.45],[-0.55,1.45]], 0.03, -1.213, M.gloss, null, 0.008, 1.33);
+  back([[-0.52,1.22],[0.52,1.22],[0.52,1.43],[-0.52,1.43]], 0.025, -1.216, M.glass, null, 0.008, 1.33);
+  back([[-0.16,1.468],[0.16,1.468],[0.16,1.488],[-0.16,1.488]], 0.006, -1.216, M.tail, 'brakelight', 0.012, 1.478);
+  BRAKE.pickup = {a:dCab(-1.220, 1.478, 0), n:[-1, 0.1, 0]};
   const dlo = new THREE.Shape();
   dlo.moveTo(0.73, 1.16); dlo.lineTo(0.23, 1.475); dlo.quadraticCurveTo(0.16, 1.515, 0.04, 1.515);
-  dlo.lineTo(-1.06, 1.52); dlo.quadraticCurveTo(-1.20, 1.52, -1.24, 1.44);
-  dlo.lineTo(-1.26, 1.22); dlo.quadraticCurveTo(-1.265, 1.19, -1.22, 1.19);
+  dlo.lineTo(-0.904, 1.52); dlo.quadraticCurveTo(-1.044, 1.52, -1.084, 1.44);
+  dlo.lineTo(-1.104, 1.22); dlo.quadraticCurveTo(-1.109, 1.19, -1.064, 1.19);
   sideGlass(dlo, [B_PILLAR, QUARTER_TRIM], VS.pickup);
   // bed: side walls carry the body sides up; bulkhead, tailgate and a black liner floor span the width
-  const wall = new THREE.Shape(toV2([[-1.41,1.02],[-1.41,1.30],[-2.19,1.30],[-2.19,1.02]]));
+  const wall = new THREE.Shape(toV2([[-1.254,1.02],[-1.254,1.30],[-2.19,1.30],[-2.19,1.02]]));
   add(sculpt(extrude(wall, 0.07, 0.012, {seg:3, curve:6, z:HW - 0.035}), dBody, 0.04), M.paint, VS.pickup);
-  const rail = roundedBox(0.80, 0.022, 0.09, 0.008); rail.translate(-1.80, 1.311, HW - 0.035);
+  const rail = roundedBox(0.95, 0.022, 0.09, 0.008); rail.translate(-1.722, 1.311, HW - 0.035);
   add(deform(rail, dBody), M.trim, VS.pickup);
   const wide = (w, h, x, y, mat) => { const g = roundedBox(w, h, 2*HW - 0.06, 0.012); g.translate(x, y, 0); return add(deform(g, dBody), mat, VC.pickup); };
-  wide(0.05, 0.26, -1.425, 1.17, M.paint);    // bulkhead
-  wide(0.05, 0.022, -1.425, 1.311, M.trim);   // bulkhead cap
+  wide(0.05, 0.26, -1.269, 1.17, M.paint);    // bulkhead
+  wide(0.05, 0.022, -1.269, 1.311, M.trim);   // bulkhead cap
   wide(0.06, 0.25, -2.17, 1.175, M.paint);    // tailgate
-  wide(0.74, 0.05, -1.79, 1.175, M.trim);     // bed liner floor
+  wide(0.90, 0.05, -1.712, 1.175, M.trim);     // bed liner floor
   const h = roundedBox(0.012, 0.035, 0.22, 0.008); h.translate(-2.203, 1.25, 0); add(deform(h, dBody), M.trim, VC.pickup);   // tailgate handle
 }
 
@@ -1021,16 +1021,17 @@ await checkpoint(50, 'Adding body details…');
   const ms = roundedBox(1.50, 0.016, 0.012, 0.005); ms.translate(-0.01, 0.505, HW + 0.032);
   add(deform(ms, dBody), M.chrome, side, 'moulding');
 
-  const gapLine = (x1,y1,x2,y2) => {
+  const gapLine = (x1,y1,x2,y2,parent) => {
     const len = Math.hypot(x2-x1, y2-y1), g = new THREE.PlaneGeometry(len, 0.0055, Math.ceil(len/0.03), 1);
     g.rotateZ(Math.atan2(y2-y1, x2-x1)); g.translate((x1+x2)/2, (y1+y2)/2, HW + 0.0015);
-    add(deform(g, dBody), M.gap, side).castShadow = false;
+    add(deform(g, dBody), M.gap, parent || side).castShadow = false;
   };
-  const gapArc = (cx, cy, r, t0, t1) => { const g = new THREE.RingGeometry(r - 0.00275, r + 0.00275, 28, 1, t0, t1 - t0); g.translate(cx, cy, HW + 0.0015); add(deform(g, dBody), M.gap, side).castShadow = false; };
+  const gapArc = (cx, cy, r, t0, t1, parent) => { const g = new THREE.RingGeometry(r - 0.00275, r + 0.00275, 28, 1, t0, t1 - t0); g.translate(cx, cy, HW + 0.0015); add(deform(g, dBody), M.gap, parent || side).castShadow = false; };
   gapLine(0.86, 0.545, 0.86, 1.03);
   gapLine(-0.53, 0.545, -0.53, 1.03);
-  gapLine(-1.30, 0.90, -1.30, 1.05);
-  gapArc(WR, R, 0.531, 0.332, 1.4575);
+  // rear door's back edge: the pickup's shorter cab ends it further forward
+  for(const k of ['sedan', 'suv', 'convertible']){ gapLine(-1.30, 0.90, -1.30, 1.05, VS[k]); gapArc(WR, R, 0.531, 0.332, 1.4575, VS[k]); }
+  gapLine(-1.235, 0.888, -1.235, 1.05, VS.pickup); gapArc(WR, R, 0.531, 0.332, 1.3332, VS.pickup);
   const handle = (x, y, id) => { const g = roundedBox(0.17, 0.035, 0.032, 0.013); g.translate(x, y, HW + 0.004); add(deform(g, dBody), M.chrome, side, id); };
   handle(0.28, 1.0, 'handleFR'); handle(-0.90, 1.012, 'handleRR');
 }
@@ -2015,7 +2016,8 @@ function resize(){
   const nf = Math.max(2.5 / (vt * camera.aspect), 1.45 / vt) + 1.8;
   tRadius *= nf / fitR; radius *= nf / fitR; fitR = nf;
   const ph = panel.offsetHeight; document.documentElement.style.setProperty('--panelH', ph + 'px');
-  baseShift = Math.max(0, (ph + 16 - 70) / 2);
+  // lift the stage a little so it sits closer to the vehicle-type cards at the top
+  baseShift = Math.max(0, (ph + 16 - 70) / 2) + Math.round(h * 0.08);
   sideX = 0;
   applyShift(true);
 }
