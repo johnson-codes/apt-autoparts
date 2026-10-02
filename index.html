@@ -205,17 +205,9 @@ body.night .top h1,body.night .top .eyebrow{color:#eef1f5}
 .shop-parts:hover{background:#bf191a}
 .shop-parts:focus-visible{outline:3px solid #002250;outline-offset:3px}
 
-.prototype-notice{position:fixed;z-index:4;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));width:min(1267px,calc(100vw - 24px));max-width:calc(100vw - 24px);box-sizing:border-box;padding:11px 0;border:2px solid #1554c0;border-radius:9px;background:#fff;color:#111;font-size:15px;font-weight:550;line-height:1.5;overflow:hidden;box-shadow:0 2px 8px rgba(0,34,80,.08)}
-.notice-track{display:flex;width:max-content;animation:notice-scroll 48s linear infinite}
-.notice-copy{flex:none;white-space:nowrap;padding-right:64px}
-.prototype-notice strong{font-weight:750}
-.prototype-notice:hover .notice-track,.prototype-notice:focus .notice-track{animation-play-state:paused}
-.prototype-notice:focus-visible{outline:2px solid #002250;outline-offset:3px}
-@keyframes notice-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-@media(min-width:681px){.drawer{top:calc(var(--notice-height,49px) + max(12px,env(safe-area-inset-top)) + 12px)}.card{top:calc(var(--notice-height,110px) + max(12px,env(safe-area-inset-top)) + 12px);max-height:calc(100dvh - var(--notice-height,110px) - var(--panelH,150px) - 60px)}}
-@media(max-width:680px),(max-width:1000px) and (pointer:coarse){.prototype-notice{width:calc(100vw - 24px);padding:9px 0;font-size:14px}.card{top:auto;max-height:34dvh}}
-@media(orientation:landscape) and (max-height:600px) and (pointer:coarse){.card{top:calc(var(--notice-height,110px) + max(12px,env(safe-area-inset-top)) + 10px);max-height:none}}
-@media(prefers-reduced-motion:reduce){.notice-track{animation:none;width:auto}.notice-copy{white-space:normal;padding:0 12px}.notice-copy[aria-hidden]{display:none}}
+@media(min-width:681px){.drawer{top:calc(max(12px,env(safe-area-inset-top)) + 12px)}.card{top:calc(max(12px,env(safe-area-inset-top)) + 12px);max-height:calc(100dvh - var(--panelH,150px) - 60px)}}
+@media(max-width:680px),(max-width:1000px) and (pointer:coarse){.card{top:auto;max-height:34dvh}}
+@media(orientation:landscape) and (max-height:600px) and (pointer:coarse){.card{top:calc(max(12px,env(safe-area-inset-top)) + 10px);max-height:none}}
 </style>
 </head>
 <body>
@@ -225,13 +217,6 @@ body.night .top h1,body.night .top .eyebrow{color:#eef1f5}
 <div id="tip" class="tip"></div>
 
 <h1 class="sr-only">APT 3D Parts Explorer</h1>
-<aside class="prototype-notice" aria-label="Prototype notice — hover or focus to pause scrolling" tabindex="0"><div class="notice-track"><span class="notice-copy"><strong>Prototype preview.</strong> Parts shown may not apply to every vehicle. Actual parts, sizes and shapes vary by make and model. APT Auto Parts reserves the right to provide further clarification.</span><span class="notice-copy" aria-hidden="true"><strong>Prototype preview.</strong> Parts shown may not apply to every vehicle. Actual parts, sizes and shapes vary by make and model. APT Auto Parts reserves the right to provide further clarification.</span></div></aside>
-<script>
-const prototypeNotice = document.querySelector('.prototype-notice');
-const measureNotice = () => document.documentElement.style.setProperty('--notice-height', prototypeNotice.getBoundingClientRect().height + 'px');
-measureNotice();
-new ResizeObserver(measureNotice).observe(prototypeNotice);
-</script>
 
 <aside id="drawer" class="drawer glass on" aria-label="Parts list">
   <div class="drawer-head"><strong>All parts</strong></div>
