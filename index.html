@@ -1,0 +1,2086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>APT 3D Parts Explorer</title>
+<style>
+:root{
+  --bg1:#f4f6f9; --bg2:#cdd4dd; --panel:rgba(255,255,255,.82); --solid:#ffffff; --line:rgba(15,20,30,.10);
+  --text:#12161c; --muted:#5b6472; --chip:#ffffff; --chip-on:#002250; --chip-on-t:#ffffff; --accent:#E01F20; --navy:#002250;
+  --shadow:0 12px 40px rgba(10,15,25,.16);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg1:#2c323c; --bg2:#0a0c10; --panel:rgba(20,23,29,.84); --solid:#181b21; --line:rgba(255,255,255,.10);
+    --text:#eef1f5; --muted:#9aa3b1; --chip:#1f232b; --chip-on:#eef1f5; --chip-on-t:#12161c; --shadow:0 12px 40px rgba(0,0,0,.5); --navy:#eef1f5;
+  }
+}
+:root[data-theme="dark"]{
+  --bg1:#2c323c; --bg2:#0a0c10; --panel:rgba(20,23,29,.84); --solid:#181b21; --line:rgba(255,255,255,.10);
+  --text:#eef1f5; --muted:#9aa3b1; --chip:#1f232b; --chip-on:#eef1f5; --chip-on-t:#12161c; --shadow:0 12px 40px rgba(0,0,0,.5); --navy:#eef1f5;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--text);overflow:hidden;
+  -webkit-font-smoothing:antialiased;background:radial-gradient(120% 90% at 50% 30%,var(--bg1) 0%,var(--bg2) 100%)}
+#night{position:fixed;inset:0;background:radial-gradient(120% 90% at 50% 40%,#1a2030 0%,#030406 100%);opacity:0;transition:opacity .8s;pointer-events:none;z-index:0}
+body.night #night{opacity:.94}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab;z-index:1;outline:none}
+#c.drag{cursor:grabbing} #c.hot{cursor:pointer}
+button{font:inherit;color:inherit;cursor:pointer}
+.glass{background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(16px) saturate(1.2);-webkit-backdrop-filter:blur(16px) saturate(1.2);box-shadow:var(--shadow)}
+
+/* header */
+.top{position:fixed;top:0;left:0;right:0;z-index:4;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:18px 22px;pointer-events:none}
+.top > *{pointer-events:auto}
+.brand-logo{display:block;width:200px;height:auto;flex:none;border-radius:14px;overflow:hidden;box-shadow:0 4px 16px rgba(0,20,50,.18)}
+@media(max-width:680px){.brand-logo{width:112px;border-radius:9px}.top>div{min-width:0}.top .eyebrow{font-size:10px}}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.eyebrow b{color:#002250;text-shadow:0 0 1px #fff,0 0 1px #fff,0 0 2px rgba(255,255,255,.9)}
+h1{font-size:22px;font-weight:800;letter-spacing:-.01em;margin-top:2px;color:var(--navy,var(--text))}
+body.night .top h1,body.night .top .eyebrow{color:#eef1f5}
+.pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:9px 14px;font-size:13px;font-weight:650}
+.pill .count{background:var(--accent);color:#fff;border-radius:999px;font-size:11px;padding:2px 7px;font-weight:700}
+
+/* hotspots */
+#pins{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden}
+.pin{--pin:#1554c0;position:absolute;left:0;top:0;width:0;height:0;border:0;background:none;pointer-events:auto;transition:opacity .25s}
+.pin .dot{position:absolute;left:-12px;top:-12px;width:24px;height:24px;border-radius:50%;background:transparent;display:grid;place-items:center;transition:transform .15s}
+.pin .dot::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--pin);box-shadow:0 0 0 2px #fff,0 0 0 2.5px rgba(0,0,0,.12),0 1px 3px rgba(0,0,0,.22);opacity:.85;transition:opacity .15s}
+.pin:hover .dot,.pin:focus-visible .dot{transform:scale(1.2)}
+.pin:hover .dot::before,.pin:focus-visible .dot::before{opacity:1}
+.pin .lbl{position:absolute;left:18px;top:-13px;white-space:nowrap;font-size:12px;font-weight:700;letter-spacing:.02em;
+  padding:5px 9px;border-radius:8px;background:var(--solid);color:var(--text);border:1px solid var(--line);
+  box-shadow:0 4px 14px rgba(0,0,0,.18);opacity:0;transform:translateX(-4px);transition:opacity .15s,transform .15s;pointer-events:none}
+.pin:hover .lbl,.pin:focus-visible .lbl,.pin.sel .lbl{opacity:1;transform:none}
+.pin.sel .dot{background:var(--pin);border:2px solid #fff;width:13px;height:13px;left:-6.5px;top:-6.5px;box-shadow:0 1px 4px rgba(0,0,0,.22)}
+.pin.sel .dot::before{background:#fff;box-shadow:none;opacity:1;width:4px;height:4px}
+.pin.sel .dot::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:1.5px solid var(--pin);animation:ring 1.6s ease-out infinite}
+@keyframes ring{from{opacity:.6;transform:scale(.7)}to{opacity:0;transform:scale(1.5)}}
+.pin.off{opacity:0;pointer-events:none}
+.tip{position:fixed;z-index:5;pointer-events:none;font-size:12px;font-weight:700;padding:5px 9px;border-radius:8px;background:var(--solid);
+  border:1px solid var(--line);box-shadow:0 4px 14px rgba(0,0,0,.18);opacity:0;transition:opacity .12s;white-space:nowrap}
+.tip.on{opacity:1}
+
+/* info card */
+.card{position:fixed;z-index:4;right:18px;top:18px;width:290px;max-height:calc(100% - var(--panelH,150px) - 110px);overflow:auto;border-radius:18px;padding:16px 16px 12px;
+  transform:translateX(12px);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+.card.on{opacity:1;transform:none;pointer-events:auto}
+.card-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.chip{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.x{border:0;background:transparent;font-size:22px;line-height:1;width:30px;height:30px;border-radius:8px;color:var(--muted)}
+.x:hover{background:var(--line)}
+.card h2{font-size:18px;letter-spacing:-.01em;margin:4px 0 6px;display:flex;gap:10px;align-items:center}
+.card h2 .num{flex:none;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;display:grid;place-items:center}
+.card p{font-size:13.5px;line-height:1.45;color:var(--text)}
+.why{margin-top:8px;display:flex;gap:6px;align-items:baseline}
+.why span{flex:none;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.why p{font-size:13px;color:var(--muted)}
+.card-actions{display:none !important;margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--chip);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:650}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:hover{filter:brightness(1.05)}
+.card-nav{margin-top:10px;padding-top:6px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted)}
+.card-nav button{border:0;background:transparent;font-weight:700;font-size:13px;padding:6px 8px;border-radius:8px}
+.card-nav button:hover{background:var(--line)}
+
+/* parts drawer */
+.drawer{position:fixed;z-index:4;left:18px;top:18px;width:300px;bottom:calc(var(--panelH,150px) + 30px);border-radius:18px;display:flex;flex-direction:column;
+  transform:translateX(-12px);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+.drawer.on{opacity:1;transform:none;pointer-events:auto}
+.drawer-head{display:flex;justify-content:space-between;align-items:center;padding:12px 12px 6px 16px;font-size:15px}
+.search{margin:4px 12px 8px;padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--chip);color:var(--text);font:inherit;font-size:13px}
+#partList{overflow:auto;padding:0 8px 10px}
+.grp{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:12px 8px 4px}
+.row-part{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:0;background:transparent;border-radius:10px;padding:8px;font-size:13.5px;font-weight:600}
+.row-part:hover{background:var(--line)}
+.row-part.sel{background:rgba(224,31,32,.1);color:var(--accent)}
+.row-part .n{flex:none;width:22px;height:22px;border-radius:50%;background:var(--line);font-size:11px;display:grid;place-items:center;font-weight:700}
+.row-part.sel .n{background:var(--accent);color:#fff}
+.row-part small{margin-left:auto;font-size:11px;color:var(--muted);font-weight:600}
+
+/* bottom panel */
+.panel{position:fixed;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:3;width:min(820px,calc(100% - 32px));border-radius:18px;padding:10px 12px 12px}
+.tabs{display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid var(--line)}
+.tab{border:0;background:transparent;padding:6px 10px 9px;font-size:13px;font-weight:700;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab[aria-selected="true"]{color:var(--text);border-bottom-color:var(--accent)}
+.pane{display:none;align-items:center;gap:8px;flex-wrap:wrap}
+.pane.on{display:flex}
+.panel{width:max-content;max-width:calc(100vw - 32px);padding:8px;border-radius:999px}
+.pane[data-pane="actions"]{justify-content:center;gap:8px}
+.ubtn{position:relative;display:inline-flex;align-items:center;gap:9px;padding:10px 18px 10px 11px;border-radius:999px;
+  border:1.5px solid var(--accent);background:var(--chip);color:var(--text);font-size:14px;font-weight:700;letter-spacing:.005em;cursor:pointer;
+  box-shadow:0 1px 2px rgba(0,0,0,.06);transition:transform .18s ease,box-shadow .18s ease,background .18s,color .18s;
+  animation:uGlow 3.2s ease-in-out infinite}
+.ubtn:nth-child(2){animation-delay:.5s}.ubtn:nth-child(3){animation-delay:1s}
+.ubtn::before{content:"+";display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;
+  font-size:17px;font-weight:600;line-height:1;transition:transform .25s ease,background .18s,color .18s}
+.ubtn:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(224,31,32,.22);animation:none}
+.ubtn:hover::before{transform:rotate(90deg)}
+.ubtn:active{transform:translateY(0);box-shadow:0 2px 6px rgba(224,31,32,.2)}
+.ubtn:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.ubtn[aria-pressed="true"]{background:var(--accent);color:#fff;animation:none}
+.ubtn[aria-pressed="true"]::before{background:#fff;color:var(--accent);transform:rotate(45deg)}
+@keyframes uGlow{0%,100%{box-shadow:0 1px 2px rgba(0,0,0,.06),0 0 0 0 rgba(224,31,32,0)}50%{box-shadow:0 1px 2px rgba(0,0,0,.06),0 0 0 5px rgba(224,31,32,.12)}}
+@media (prefers-reduced-motion:reduce){.ubtn{animation:none;transition:none}.ubtn:hover{transform:none}}
+@media (max-width:680px){.ubtn{padding:8px 12px 8px 8px;font-size:12.5px;gap:6px}.ubtn::before{width:18px;height:18px;font-size:14px}}
+.chipbtn{border:1px solid var(--line);background:var(--chip);border-radius:10px;padding:7px 11px;font-size:13px;font-weight:650;line-height:1.1;transition:background .15s,color .15s}
+.chipbtn[aria-pressed="true"]{background:var(--chip-on);color:var(--chip-on-t);border-color:transparent}
+.chipbtn:focus-visible,.tab:focus-visible,.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.slider{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:650;padding:4px 10px;border:1px solid var(--line);border-radius:10px;background:var(--chip)}
+.slider input{width:120px;accent-color:var(--accent)}
+.sep{width:1px;height:24px;background:var(--line);margin:0 2px}
+.sw{display:flex;gap:7px;align-items:center}
+.sw button{width:24px;height:24px;padding:0;border-radius:50%;border:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18),0 1px 3px rgba(0,0,0,.2)}
+.sw button[aria-pressed="true"]{outline:2px solid var(--text);outline-offset:2px}
+.paint-name{font-size:12px;color:var(--muted);font-weight:650;min-width:90px}
+#loading{position:fixed;inset:0;display:grid;place-items:center;z-index:6;font-size:14px;color:var(--muted);pointer-events:none;transition:opacity .5s}
+#loading.hide{opacity:0}
+
+@media (max-width:680px){
+  .top{padding:14px 16px}
+  h1{font-size:18px}
+  .card{left:12px;right:12px;width:auto;top:auto;bottom:calc(var(--panelH,150px) + 24px);max-height:46vh;transform:translateY(12px)}
+  .drawer{left:12px;right:12px;width:auto}
+  .slider input{width:90px}
+  .paint-name{display:none}
+  .chipbtn{padding:7px 9px;font-size:12px}
+}
+
+/* Touch-first phone layout, including phones rotated to landscape. */
+@media (max-width:680px), (max-width:1000px) and (pointer:coarse){
+  .drawer{display:none!important}
+  .top{padding:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left));gap:8px}
+  .brand-logo{width:112px;border-radius:9px}
+  .top h1{font-size:16px}.top .eyebrow{font-size:10px}
+  .panel{bottom:max(10px,env(safe-area-inset-bottom));max-width:calc(100% - 24px);border-radius:20px}
+  .pane[data-pane="actions"]{gap:4px;flex-wrap:nowrap}
+  .ubtn{padding:10px 7px;font-size:11px;gap:4px;min-height:44px;animation:none}
+  .ubtn::before{width:16px;height:16px;font-size:13px;flex:none}
+  .card{left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));width:auto;top:auto;bottom:calc(var(--panelH,70px) + max(20px,env(safe-area-inset-bottom)));max-height:34dvh;transform:translateY(12px);overscroll-behavior:contain}
+  .card p{font-size:14px}.x,.card-nav button{min-width:44px;min-height:44px}
+  .pin .dot{width:36px;height:36px;left:-18px;top:-18px}
+}
+@media (orientation:landscape) and (max-height:600px) and (pointer:coarse){
+  .drawer{display:none!important}
+  .top h1{font-size:14px}.brand-logo{width:90px}
+  .card{left:auto;right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));bottom:calc(var(--panelH,64px) + 18px);width:240px;max-height:none;padding:10px;transform:translateX(12px)}
+  .card h2{font-size:16px}.card p,.why p{font-size:13px}.card-nav{margin-top:4px;padding-top:0}
+  .panel{padding:4px}
+}
+
+
+#loading{background:#fff;color:#002250;pointer-events:auto;padding:24px}
+#loading.hide{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .4s,visibility 0s .4s}
+.load-box{display:grid;justify-items:center;gap:14px;text-align:center}
+.load-ring{position:relative;width:176px;height:176px}
+.load-ring svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.load-ring circle{fill:none;stroke-width:6}
+.load-ring .trk{stroke:#e9edf3}
+.load-ring .arc{stroke:#e01f20;stroke-linecap:round;stroke-dasharray:521.5;stroke-dashoffset:506;transition:stroke-dashoffset .25s ease}
+.load-ring img{position:absolute;inset:16px;width:144px;height:144px;border-radius:50%;object-fit:cover;box-shadow:0 6px 20px rgba(0,34,80,.18);animation:loadPulse 2s ease-in-out infinite}
+@keyframes loadPulse{50%{transform:scale(.97)}}
+.load-pct{font-size:15px;font-weight:700;letter-spacing:.04em;color:#002250;font-variant-numeric:tabular-nums}
+.load-err{font-size:13px;color:#5b6472;margin:0}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.load-ring img{animation:none}}
+@media (max-width:680px), (max-width:1000px) and (pointer:coarse), (orientation:landscape) and (max-height:600px) and (pointer:coarse){
+ :root:root:root{--bg1:#fff;--bg2:#fff;--panel:rgba(255,255,255,.95);--solid:#fff;--line:rgba(15,20,30,.1);--text:#12161c;--muted:#5b6472;--chip:#fff;--chip-on:#002250;--chip-on-t:#fff;--navy:#002250;--shadow:0 8px 28px rgba(10,15,25,.12)}
+ body{background:#fff}body.night #night{opacity:0}
+}
+
+@media(max-width:680px), (max-width:1000px) and (pointer:coarse){
+ .pane[data-pane="actions"]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+ .panel{width:min(360px,calc(100% - 24px));border-radius:18px}
+ .ubtn{justify-content:flex-start;font-size:12px;padding:8px}
+}
+@media(orientation:landscape) and (max-height:600px) and (pointer:coarse){
+ .pane[data-pane="actions"]{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .panel{width:min(650px,calc(100% - 32px))}
+ .ubtn{font-size:11px}
+}
+
+.shop-parts{display:flex;align-items:center;justify-content:center;min-height:44px;margin-top:12px;padding:10px 16px;background:#e01f20;border:2px solid #002250;border-radius:9px;color:#fff;font-size:14px;font-weight:750;text-decoration:none;transition:background .15s}
+.shop-parts:hover{background:#bf191a}
+.shop-parts:focus-visible{outline:3px solid #002250;outline-offset:3px}
+
+.prototype-notice{position:fixed;z-index:4;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));width:min(1267px,calc(100vw - 24px));max-width:calc(100vw - 24px);box-sizing:border-box;padding:11px 0;border:2px solid #1554c0;border-radius:9px;background:#fff;color:#111;font-size:15px;font-weight:550;line-height:1.5;overflow:hidden;box-shadow:0 2px 8px rgba(0,34,80,.08)}
+.notice-track{display:flex;width:max-content;animation:notice-scroll 48s linear infinite}
+.notice-copy{flex:none;white-space:nowrap;padding-right:64px}
+.prototype-notice strong{font-weight:750}
+.prototype-notice:hover .notice-track,.prototype-notice:focus .notice-track{animation-play-state:paused}
+.prototype-notice:focus-visible{outline:2px solid #002250;outline-offset:3px}
+@keyframes notice-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media(min-width:681px){.drawer{top:calc(var(--notice-height,49px) + max(12px,env(safe-area-inset-top)) + 12px)}.card{top:calc(var(--notice-height,110px) + max(12px,env(safe-area-inset-top)) + 12px);max-height:calc(100dvh - var(--notice-height,110px) - var(--panelH,150px) - 60px)}}
+@media(max-width:680px),(max-width:1000px) and (pointer:coarse){.prototype-notice{width:calc(100vw - 24px);padding:9px 0;font-size:14px}.card{top:auto;max-height:34dvh}}
+@media(orientation:landscape) and (max-height:600px) and (pointer:coarse){.card{top:calc(var(--notice-height,110px) + max(12px,env(safe-area-inset-top)) + 10px);max-height:none}}
+@media(prefers-reduced-motion:reduce){.notice-track{animation:none;width:auto}.notice-copy{white-space:normal;padding:0 12px}.notice-copy[aria-hidden]{display:none}}
+</style>
+</head>
+<body>
+<div id="night"></div>
+<canvas id="c" tabindex="0" aria-label="Interactive 3D SUV. Drag to rotate, scroll or pinch to zoom, click a part for details."></canvas>
+<div id="pins"></div>
+<div id="tip" class="tip"></div>
+
+<h1 class="sr-only">APT 3D Parts Explorer</h1>
+<aside class="prototype-notice" aria-label="Prototype notice — hover or focus to pause scrolling" tabindex="0"><div class="notice-track"><span class="notice-copy"><strong>Prototype preview.</strong> Parts shown may not apply to every vehicle. Actual parts, sizes and shapes vary by make and model. APT Auto Parts reserves the right to provide further clarification.</span><span class="notice-copy" aria-hidden="true"><strong>Prototype preview.</strong> Parts shown may not apply to every vehicle. Actual parts, sizes and shapes vary by make and model. APT Auto Parts reserves the right to provide further clarification.</span></div></aside>
+<script>
+const prototypeNotice = document.querySelector('.prototype-notice');
+const measureNotice = () => document.documentElement.style.setProperty('--notice-height', prototypeNotice.getBoundingClientRect().height + 'px');
+measureNotice();
+new ResizeObserver(measureNotice).observe(prototypeNotice);
+</script>
+
+<aside id="drawer" class="drawer glass on" aria-label="Parts list">
+  <div class="drawer-head"><strong>All parts</strong></div>
+  <input id="search" class="search" type="search" placeholder="Search parts…" aria-label="Search parts">
+  <div id="partList"></div>
+</aside>
+
+<section id="card" class="card glass" aria-live="polite">
+  <div class="card-top"><span class="chip" id="cardCat"></span><button class="x" id="cardClose" aria-label="Close">×</button></div>
+  <h2><span class="num" id="cardNum"></span><span id="cardTitle"></span></h2>
+  <p id="cardDesc"></p>
+  <div class="why"><span>Replace if</span><p id="cardWhy"></p></div>
+  <a class="shop-parts" href="https://apt.partsordering.com/Retail.aspx" target="_blank" rel="noopener noreferrer" aria-label="Shop Parts — opens in a new tab">Shop Parts</a>
+  <div class="card-actions" id="cardActions"></div>
+  <div class="card-nav"><button id="prevPart">‹ Prev</button><span id="cardIdx"></span><button id="nextPart">Next ›</button></div>
+</section>
+
+<div class="panel glass" id="panel">
+  <div class="pane on" data-pane="actions">
+    <button class="ubtn" id="uFront" aria-pressed="false">Look behind front bumper</button>
+    <button class="ubtn" id="uHood" aria-pressed="false">Pop the hood</button>
+    <button class="ubtn" id="uRear" aria-pressed="false">Look behind rear bumper</button>
+    <button class="ubtn" id="uUnder" aria-pressed="false">Peek under the engine</button>
+  </div>
+  <div class="pane" data-pane="explore">
+    <button class="chipbtn" id="tHood" aria-pressed="false">Open hood</button>
+    <label class="slider">Front layers <input type="range" id="sFront" min="0" max="100" value="0"></label>
+    <label class="slider">Rear layers <input type="range" id="sRear" min="0" max="100" value="0"></label>
+    <button class="chipbtn" id="tXray" aria-pressed="false">X-ray</button>
+    <button class="chipbtn" id="tPins" aria-pressed="true">Hotspots</button>
+  </div>
+  <div class="pane" data-pane="view" id="views">
+    <button class="chipbtn" data-view="f34">¾ Front</button>
+    <button class="chipbtn" data-view="front">Front</button>
+    <button class="chipbtn" data-view="left">Left</button>
+    <button class="chipbtn" data-view="right">Right</button>
+    <button class="chipbtn" data-view="rear">Rear</button>
+    <button class="chipbtn" data-view="r34">¾ Rear</button>
+    <button class="chipbtn" data-view="top">Top</button>
+    <span class="sep"></span>
+    <button class="chipbtn" id="tAuto" aria-pressed="false">Auto-rotate</button>
+  </div>
+  <div class="pane" data-pane="style">
+    <div class="sw" id="swatches" role="group" aria-label="Paint colour"></div>
+    <span class="paint-name" id="paintName"></span>
+    <span class="sep"></span>
+    <button class="chipbtn" id="tRoof" aria-pressed="true">Black roof</button>
+    <button class="chipbtn" id="tLights" aria-pressed="false">Lights</button>
+    <button class="chipbtn" id="tSteer" aria-pressed="false">Turn wheels</button>
+  </div>
+</div>
+<div id="loading" aria-busy="true">
+ <div class="load-box">
+ <div class="load-ring" id="loadTrack" role="progressbar" aria-label="Loading APT 3D Parts Explorer" aria-valuemin="0" aria-valuemax="100" aria-valuenow="3">
+  <svg viewBox="0 0 176 176" aria-hidden="true"><circle class="trk" cx="88" cy="88" r="83"/><circle class="arc" id="loadFill" cx="88" cy="88" r="83"/></svg>
+  <img src="assets/apt-logo-round.png" alt="APT Auto Parts" width="144" height="144">
+ </div>
+ <div class="load-pct" id="loadPercent">3%</div>
+ <span class="sr-only" id="loadStage" role="status">Loading…</span>
+ <p class="load-err" id="loadNote" hidden></p>
+ <button id="loadRetry" class="btn" hidden onclick="location.reload()">Try again</button>
+ </div>
+</div>
+<script>
+window.aptLoad = {
+ update(percent, label){
+  document.getElementById('loadFill').style.strokeDashoffset = 521.5 * (1 - percent / 100);
+  document.getElementById('loadPercent').textContent = percent + '%';
+  document.getElementById('loadStage').textContent = label;
+  document.getElementById('loadTrack').setAttribute('aria-valuenow', percent);
+ },
+ fail(){
+  document.getElementById('loadStage').textContent = 'Unable to load the explorer';
+  document.getElementById('loadPercent').hidden = true;
+  const n = document.getElementById('loadNote'); n.textContent = "Couldn't load. Check your connection."; n.hidden = false;
+  document.getElementById('loadRetry').hidden = false;
+  document.getElementById('loading').setAttribute('aria-busy','false');
+ }
+};
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(async function(){
+'use strict';
+const checkpoint = async (n, label) => { window.aptLoad.update(n,label); await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))); };
+if(!window.THREE){ window.aptLoad.fail(); return; }
+await checkpoint(15, 'Preparing the scene…');
+/* ================= renderer / scene ================= */
+const loadEl = document.getElementById('loading');
+const col = h => new THREE.Color(h).convertSRGBToLinear();
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.sortObjects = true;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 120);
+
+/* studio environment (procedural) */
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = (function(){
+  const s = new THREE.Scene();
+  const g = new THREE.SphereGeometry(30, 64, 32), p = g.attributes.position, c = [];
+  const top = new THREE.Color(0.24,0.27,0.32), hor = new THREE.Color(1.0,1.0,1.02), gnd = new THREE.Color(0.09,0.09,0.10), t = new THREE.Color();
+  for(let i=0;i<p.count;i++){
+    const y = p.getY(i)/30;
+    if(y >= 0) t.copy(hor).lerp(top, Math.pow(y, 0.33)); else t.copy(hor).lerp(gnd, Math.min(1, -y*5));
+    c.push(t.r, t.g, t.b);
+  }
+  g.setAttribute('color', new THREE.Float32BufferAttribute(c, 3));
+  s.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({vertexColors:true, side:THREE.BackSide})));
+  const panel = (w,h,x,y,z,k) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w,h), new THREE.MeshBasicMaterial({color:new THREE.Color(k,k,k), side:THREE.DoubleSide})); m.position.set(x,y,z); m.lookAt(0,0,0); s.add(m); };
+  panel(22,0.9, 0,22,3.2, 4.2); panel(22,0.9, 0,22,-3.2, 4.2);
+  panel(14,2.2, 18,8,7, 2.8);   panel(14,2.2, -18,7,-7, 2.3);
+  panel(3,10, 5,6,-20, 1.7);    panel(3,10, -7,6,20, 1.5);
+  return pmrem.fromScene(s, 0.03).texture;
+})();
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x3a3a3a, 0.25));
+const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+sun.position.set(3.5, 9, 4.5); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, {left:-4.5, right:4.5, top:4.5, bottom:-4.5, near:1, far:25});
+sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
+scene.add(sun);
+
+await checkpoint(25, 'Preparing materials…');
+/* ================= textures ================= */
+function canvasTex(w, h, draw){
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c); t.anisotropy = renderer.capabilities.getMaxAnisotropy(); return t;
+}
+const hexTex = canvasTex(128, 128, g => {
+  g.fillStyle = '#3a3e44'; g.fillRect(0,0,128,128);
+  g.save(); g.scale(128/52, 128/90); g.fillStyle = '#050607';
+  const hex = (cx,cy,r) => { g.beginPath(); for(let i=0;i<6;i++){ const a = Math.PI/6 + i*Math.PI/3; g.lineTo(cx+r*Math.cos(a), cy+r*Math.sin(a)); } g.closePath(); g.fill(); };
+  [[0,0],[52,0],[0,90],[52,90],[26,45]].forEach(([x,y]) => hex(x,y,25));
+  g.restore();
+});
+hexTex.wrapS = hexTex.wrapT = THREE.RepeatWrapping; hexTex.repeat.set(38, 22); hexTex.encoding = THREE.sRGBEncoding;
+
+const finTex = (bg, line) => { const t = canvasTex(64, 64, g => { g.fillStyle = bg; g.fillRect(0,0,64,64); g.fillStyle = line; for(let x=0;x<64;x+=4) g.fillRect(x,0,2,64); g.fillStyle='rgba(0,0,0,.25)'; for(let y=0;y<64;y+=16) g.fillRect(0,y,64,2); });
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.encoding = THREE.sRGBEncoding; return t; };
+const condTex = finTex('#b9bec4', '#8d9399'); condTex.repeat.set(60, 6);
+const radTex  = finTex('#c9ced4', '#8e949b');   // silver aluminium fins radTex.repeat.set(60, 6);
+
+const foamTex = canvasTex(128, 128, g => { g.fillStyle = '#1b1d21'; g.fillRect(0,0,128,128);   // black EPP foam
+  for(let i=0;i<1400;i++){ const v = 26 + Math.random()*30|0; g.fillStyle = `rgb(${v},${v+3},${v+7})`; g.beginPath(); g.arc(Math.random()*128, Math.random()*128, 1+Math.random()*2.2, 0, 7); g.fill(); } });
+foamTex.wrapS = foamTex.wrapT = THREE.RepeatWrapping; foamTex.repeat.set(8, 3); foamTex.encoding = THREE.sRGBEncoding;
+
+const treadTex = canvasTex(64, 256, g => {
+  g.fillStyle = '#808080'; g.fillRect(0,0,64,256); g.fillStyle = '#ffffff'; g.fillRect(0,96,64,64);
+  g.fillStyle = '#202020'; g.fillRect(0,110,64,4); g.fillRect(0,142,64,4);
+  g.strokeStyle = '#202020'; g.lineWidth = 5;
+  for(let i=0;i<2;i++){ g.beginPath(); g.moveTo(8+i*32,96); g.lineTo(26+i*32,160); g.stroke(); }
+});
+treadTex.wrapS = THREE.RepeatWrapping; treadTex.repeat.set(52, 1);
+
+const plateTex = canvasTex(1024, 512, g => {
+  const r = 40;
+  const rr = (x,y,w,h,rad) => { g.beginPath(); g.moveTo(x+rad,y); g.arcTo(x+w,y,x+w,y+h,rad); g.arcTo(x+w,y+h,x,y+h,rad); g.arcTo(x,y+h,x,y,rad); g.arcTo(x,y,x+w,y,rad); g.closePath(); };
+  const gr = g.createLinearGradient(0,0,0,512); gr.addColorStop(0,'#ffffff'); gr.addColorStop(1,'#e9ecf0');
+  g.fillStyle = gr; rr(0,0,1024,512,r); g.fill();
+  g.lineWidth = 14; g.strokeStyle = '#002250'; rr(22,22,980,468,28); g.stroke();
+  g.fillStyle = '#E01F20'; g.fillRect(60, 70, 904, 14); g.fillRect(60, 428, 904, 14);
+  g.fillStyle = '#9aa1ab'; [[120,256],[904,256]].forEach(([x,y]) => { g.beginPath(); g.arc(x, y, 14, 0, 7); g.fill(); });
+  g.fillStyle = '#002250'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = '800 170px "Arial Narrow","Helvetica Neue",Arial,sans-serif';
+  const w = g.measureText('APT AUTO PARTS').width, sx = Math.min(1, 700 / w);
+  g.save(); g.translate(512, 262); g.scale(sx, 1); g.lineJoin = 'round'; g.lineWidth = 10; g.strokeStyle = '#ffffff'; g.strokeText('APT AUTO PARTS', 0, 0); g.fillText('APT AUTO PARTS', 0, 0); g.restore();
+});
+plateTex.encoding = THREE.sRGBEncoding;
+// APT logo on the plates (drawn over the fallback text once it loads)
+const APT_LOGO = 'data:image/png;base64,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';
+{ const img = new Image(); img.onload = () => {
+    const c = plateTex.image, g = c.getContext('2d'), r = 40;
+    g.clearRect(0, 0, c.width, c.height); g.save(); g.beginPath(); g.moveTo(r, 0); g.arcTo(c.width, 0, c.width, c.height, r); g.arcTo(c.width, c.height, 0, c.height, r); g.arcTo(0, c.height, 0, 0, r); g.arcTo(0, 0, c.width, 0, r); g.closePath(); g.clip();
+    g.fillStyle = '#002250'; g.fillRect(0, 0, c.width, c.height); g.imageSmoothingQuality = 'high'; g.drawImage(img, 0, 0, c.width, c.height); g.restore();
+    plateTex.needsUpdate = true; };
+  img.src = APT_LOGO; }
+plateTex.repeat.set(-1/0.305, 1/0.152); plateTex.offset.set(0.5, 0.5);
+
+const radialTex = (inner, outer) => canvasTex(128, 128, g => {
+  const gr = g.createRadialGradient(64,64,0,64,64,64);
+  gr.addColorStop(0, inner); gr.addColorStop(0.55, inner.replace(/[\d.]+\)$/, m => (parseFloat(m)*0.55).toFixed(3)+')')); gr.addColorStop(1, outer);
+  g.fillStyle = gr; g.fillRect(0,0,128,128);
+});
+
+/* ================= materials ================= */
+const PAINTS = [
+  {name:'Storm Grey',   hex:'#5f656d', metal:0.7,  rough:0.30},
+  {name:'Pearl White',  hex:'#e7e9ec', metal:0.05, rough:0.25},
+  {name:'Silver',       hex:'#a8adb3', metal:0.8,  rough:0.30},
+  {name:'Deep Blue',    hex:'#1c3e72', metal:0.6,  rough:0.30},
+  {name:'Ember Red',    hex:'#8c1619', metal:0.5,  rough:0.28},
+  {name:'Sage',         hex:'#6c7862', metal:0.35, rough:0.36},
+  {name:'Black',        hex:'#101215', metal:0.4,  rough:0.24},
+];
+const PAINT0 = PAINTS[2]; // Silver
+const phys = o => new THREE.MeshPhysicalMaterial(o), std = o => new THREE.MeshStandardMaterial(o);
+const M = {
+  paint:   phys({color:col(PAINT0.hex), metalness:PAINT0.metal, roughness:PAINT0.rough, clearcoat:1, clearcoatRoughness:0.04}),
+  roofBlk: phys({color:col('#0a0b0d'), metalness:0.1, roughness:0.5, clearcoat:0.25, clearcoatRoughness:0.35}),
+  glass:   phys({color:col('#0a0e13'), metalness:0, roughness:0.03, clearcoat:1, clearcoatRoughness:0, side:THREE.DoubleSide}),
+  gloss:   phys({color:col('#0b0c0f'), metalness:0.2, roughness:0.16, clearcoat:0.9}),
+  trim:    std({color:col('#1c1e21'), roughness:0.8, metalness:0}),
+  chrome:  std({color:col('#dfe3e8'), metalness:1, roughness:0.1}),
+  satin:   std({color:col('#a2a8af'), metalness:0.9, roughness:0.32}),
+  rubber:  std({color:col('#19191b'), roughness:0.9, metalness:0, bumpMap:treadTex, bumpScale:0.6, side:THREE.DoubleSide}),
+  alloyF:  std({color:col('#e2e5e9'), metalness:0.65, roughness:0.22}),
+  alloyD:  std({color:col('#2b2e33'), metalness:0.8, roughness:0.36, side:THREE.DoubleSide}),
+  rotor:   std({color:col('#72757a'), metalness:0.9, roughness:0.45}),
+  caliper: std({color:col('#2c2f34'), metalness:0.4, roughness:0.4}),
+  liner:   std({color:col('#0d0e10'), roughness:1, metalness:0, side:THREE.DoubleSide}),
+  housing: phys({color:col('#2b3037'), metalness:0.9, roughness:0.2, clearcoat:1}),
+  lensCov: phys({color:0xffffff, metalness:0, roughness:0.02, clearcoat:1, transparent:true, opacity:0.14, depthWrite:false}),
+  drl:     std({color:0xffffff, emissive:col('#eaf3ff'), emissiveIntensity:2.2}),
+  lens:    std({color:col('#c9d0d8'), metalness:1, roughness:0.08, emissive:col('#fff3dc'), emissiveIntensity:0}),
+  fog:     std({color:col('#d9dee4'), metalness:0.6, roughness:0.1, emissive:col('#fff6e6'), emissiveIntensity:0.15}),
+  tail:    phys({color:col('#4a0306'), emissive:col('#ff1616'), emissiveIntensity:0.45, roughness:0.12, clearcoat:1}),
+  tailLed: std({color:col('#ff3030'), emissive:col('#ff2020'), emissiveIntensity:1.6}),
+  reverse: phys({color:col('#cfd3d8'), metalness:0.3, roughness:0.1, clearcoat:1}),
+  amber:   std({color:col('#704000'), emissive:col('#ff9a1a'), emissiveIntensity:0.35}),
+  plateLt: std({color:col('#f2f4f7'), emissive:col('#ffffff'), emissiveIntensity:0.3}),
+  plate:   std({color:0xffffff, map:plateTex, roughness:0.45}),
+  grille:  std({color:0xffffff, map:hexTex, roughness:0.5, metalness:0.4}),
+  smoke:   phys({color:col('#15181c'), metalness:0, roughness:0.05, clearcoat:1, transparent:true, opacity:0.62}),
+  mirror:  std({color:col('#9aa3ac'), metalness:1, roughness:0.02}),
+  gap:     new THREE.MeshBasicMaterial({color:0x07080a}),
+  bay:     std({color:col('#26292e'), roughness:0.75, metalness:0.2, side:THREE.DoubleSide}),
+  engine:  std({color:col('#3b3f45'), roughness:0.5, metalness:0.7}),
+  engCov:  std({color:col('#1d2024'), roughness:0.55, metalness:0.1}),
+  battery: std({color:col('#141518'), roughness:0.6}),
+  red:     std({color:col('#b3161b'), roughness:0.4}),
+  yellow:  std({color:col('#e3b21b'), roughness:0.4}),
+  blue:    std({color:col('#1f5fbf'), roughness:0.4}),
+  tank:    phys({color:col('#e9e3d6'), roughness:0.35, transparent:true, opacity:0.85}),
+  rebar:   std({color:col('#2a2d33'), metalness:0.65, roughness:0.42}),
+  foam:    std({color:0xffffff, map:foamTex, roughness:0.95, metalness:0}),
+  cond:    std({color:0xffffff, map:condTex, metalness:0.85, roughness:0.35}),
+  rad:     std({color:0xffffff, map:radTex, metalness:0.8, roughness:0.35}),
+  radTank: std({color:col('#121315'), roughness:0.55}),
+  hl:      new THREE.MeshBasicMaterial({color:col('#ff2a2a'), transparent:true, opacity:0.35, depthWrite:false, blending:THREE.AdditiveBlending, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2}),
+  hover:   new THREE.MeshBasicMaterial({color:col('#ff6a3a'), transparent:true, opacity:0.18, depthWrite:false, blending:THREE.AdditiveBlending, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2}),
+};
+const XRAY_MATS = [M.paint, M.roofBlk, M.glass, M.trim, M.gloss, M.housing];
+
+/* ================= geometry helpers ================= */
+const V2 = (x,y) => new THREE.Vector2(x,y);
+const V3 = (x,y,z) => new THREE.Vector3(x,y,z);
+const sstep = (a,b,v) => { let t = (v-a)/(b-a); t = t < 0 ? 0 : t > 1 ? 1 : t; return t*t*(3-2*t); };
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+
+function creased(geo, deg){
+  if(geo.index) geo = geo.toNonIndexed();
+  const pos = geo.attributes.position, n = pos.count, faces = n/3, cosT = Math.cos((deg||40)*Math.PI/180);
+  const fw = new Float32Array(faces*3), fn = new Float32Array(faces*3);
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+  for(let f=0; f<faces; f++){
+    a.fromBufferAttribute(pos,f*3); b.fromBufferAttribute(pos,f*3+1); c.fromBufferAttribute(pos,f*3+2);
+    c.sub(b); a.sub(b); c.cross(a);
+    fw[f*3]=c.x; fw[f*3+1]=c.y; fw[f*3+2]=c.z;
+    const l = c.length() || 1; fn[f*3]=c.x/l; fn[f*3+1]=c.y/l; fn[f*3+2]=c.z/l;
+  }
+  const map = new Map(), keys = new Array(n), P = pos.array;
+  for(let i=0;i<n;i++){
+    const k = Math.round(P[i*3]*1e4)*73856093 ^ Math.round(P[i*3+1]*1e4)*19349663 ^ Math.round(P[i*3+2]*1e4)*83492791;
+    keys[i] = k; let arr = map.get(k); if(!arr){ arr = []; map.set(k, arr); } arr.push(i);
+  }
+  const nor = new Float32Array(n*3);
+  for(let i=0;i<n;i++){
+    const f = (i/3)|0; let x=0,y=0,z=0;
+    for(const j of map.get(keys[i])){
+      if(P[j*3]!==P[i*3] || P[j*3+1]!==P[i*3+1] || P[j*3+2]!==P[i*3+2]){ if(Math.abs(P[j*3]-P[i*3])+Math.abs(P[j*3+1]-P[i*3+1])+Math.abs(P[j*3+2]-P[i*3+2]) > 2e-4) continue; }
+      const g = (j/3)|0;
+      if(fn[f*3]*fn[g*3] + fn[f*3+1]*fn[g*3+1] + fn[f*3+2]*fn[g*3+2] >= cosT){ x+=fw[g*3]; y+=fw[g*3+1]; z+=fw[g*3+2]; }
+    }
+    const l = Math.hypot(x,y,z) || 1; nor[i*3]=x/l; nor[i*3+1]=y/l; nor[i*3+2]=z/l;
+  }
+  geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  return geo;
+}
+// split triangles along their longest edge until every edge is shorter than maxE (crack-free)
+function subdivide(geo, maxE){
+  if(geo.index) geo = geo.toNonIndexed();
+  const P = geo.attributes.position.array, U = geo.attributes.uv ? geo.attributes.uv.array : null;
+  const oP = [], oU = [], m2 = maxE*maxE, st = [];
+  const d2 = (p,i,j) => { const x=p[i*3]-p[j*3], y=p[i*3+1]-p[j*3+1], z=p[i*3+2]-p[j*3+2]; return x*x+y*y+z*z; };
+  for(let f=0; f<P.length/9; f++){
+    st.push([Array.from(P.subarray(f*9, f*9+9)), U ? Array.from(U.subarray(f*6, f*6+6)) : null]);
+    while(st.length){
+      const [p,u] = st.pop();
+      const e0 = d2(p,0,1), e1 = d2(p,1,2), e2 = d2(p,2,0);
+      let e = -1, m = m2;
+      if(e0 > m){ e=0; m=e0; } if(e1 > m){ e=1; m=e1; } if(e2 > m){ e=2; m=e2; }
+      if(e < 0){ for(const v of p) oP.push(v); if(u) for(const v of u) oU.push(v); continue; }
+      const i = e, j = (e+1)%3, k = (e+2)%3;
+      const M3 = [(p[i*3]+p[j*3])/2, (p[i*3+1]+p[j*3+1])/2, (p[i*3+2]+p[j*3+2])/2];
+      const V = k3 => [p[k3*3], p[k3*3+1], p[k3*3+2]];
+      const t1 = [...V(i), ...M3, ...V(k)], t2 = [...M3, ...V(j), ...V(k)];
+      let u1 = null, u2 = null;
+      if(u){ const MU = [(u[i*2]+u[j*2])/2, (u[i*2+1]+u[j*2+1])/2], W = k2 => [u[k2*2], u[k2*2+1]]; u1 = [...W(i), ...MU, ...W(k)]; u2 = [...MU, ...W(j), ...W(k)]; }
+      st.push([t1,u1],[t2,u2]);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(oP, 3));
+  if(U) g.setAttribute('uv', new THREE.Float32BufferAttribute(oU, 2));
+  return g;
+}
+function deform(geo, fn){
+  const p = geo.attributes.position;
+  for(let i=0;i<p.count;i++){ const r = fn(p.getX(i), p.getY(i), p.getZ(i)); p.setXYZ(i, r[0], r[1], r[2]); }
+  p.needsUpdate = true; return geo;
+}
+const SUBK = 1.8;
+const sculpt = (geo, fn, maxE, deg) => creased(deform(subdivide(geo, (maxE || 0.05) * SUBK), fn), deg || 40);
+
+function extrude(shape, width, bevel, o){
+  o = o || {};
+  const d = Math.max(0.0005, width - 2*bevel);
+  const g = new THREE.ExtrudeGeometry(shape, {depth: bevel > 0 ? d : width, bevelEnabled: bevel > 0, bevelThickness: bevel, bevelSize: bevel,
+    bevelOffset: -bevel, bevelSegments: Math.min(o.seg || 4, 4), curveSegments: Math.min(o.curve || 12, 12), steps: 1});
+  g.translate(0, 0, (bevel > 0 ? -d/2 : -width/2) + (o.z || 0));
+  return g;
+}
+function rrShape(w, h, r){
+  const s = new THREE.Shape(), x = -w/2, y = -h/2; r = Math.min(r, w/2, h/2);
+  s.moveTo(x+r,y); s.lineTo(x+w-r,y); s.quadraticCurveTo(x+w,y,x+w,y+r); s.lineTo(x+w,y+h-r);
+  s.quadraticCurveTo(x+w,y+h,x+w-r,y+h); s.lineTo(x+r,y+h); s.quadraticCurveTo(x,y+h,x,y+h-r);
+  s.lineTo(x,y+r); s.quadraticCurveTo(x,y,x+r,y);
+  return s;
+}
+function roundedBox(w, h, d, r){ return creased(extrude(rrShape(w,h,r), d, Math.min(r, d/2-0.0005), {seg:3, curve:6}), 50); }
+function roundedPoly(pts, r, seg){
+  seg = seg || 5; const out = [], n = pts.length;
+  for(let i=0;i<n;i++){
+    const p = V2(...pts[i]), a = V2(...pts[(i-1+n)%n]), b = V2(...pts[(i+1)%n]);
+    const rr = Math.min(Array.isArray(r) ? r[i] : r, p.distanceTo(a)/2, p.distanceTo(b)/2);
+    const pa = p.clone().add(a.clone().sub(p).normalize().multiplyScalar(rr));
+    const pb = p.clone().add(b.clone().sub(p).normalize().multiplyScalar(rr));
+    for(let k=0;k<=seg;k++){ const t = k/seg;
+      out.push(V2((1-t)*(1-t)*pa.x + 2*t*(1-t)*p.x + t*t*pb.x, (1-t)*(1-t)*pa.y + 2*t*(1-t)*p.y + t*t*pb.y)); }
+  }
+  return out;
+}
+const toV2 = pts => pts.map(p => V2(p[0], p[1]));
+function offsetPts(pts, d){
+  const s = THREE.ShapeUtils.area(pts) > 0 ? 1 : -1, n = pts.length, out = [];
+  for(let i=0;i<n;i++){
+    const p = pts[i], a = pts[(i-1+n)%n], b = pts[(i+1)%n];
+    const e1 = p.clone().sub(a).normalize(), e2 = b.clone().sub(p).normalize();
+    const n1 = V2(e1.y, -e1.x).multiplyScalar(s), n2 = V2(e2.y, -e2.x).multiplyScalar(s);
+    const m = n1.clone().add(n2).normalize(); const cs = Math.max(0.35, m.dot(n1));
+    out.push(p.clone().add(m.multiplyScalar(d/cs)));
+  }
+  return out;
+}
+// flat panel on the front (dir=+1) or rear (dir=-1) face; pts are Vector2(world z, world y)
+function facePanel(pts, holes, depth, bevel, x, dir, tilt, pivotY){
+  const f = v => V2(dir > 0 ? v.x : -v.x, v.y - pivotY);
+  const s = new THREE.Shape(pts.map(f));
+  (holes || []).forEach(h => s.holes.push(new THREE.Path(h.map(f))));
+  const g = new THREE.ExtrudeGeometry(s, {depth, bevelEnabled: bevel > 0, bevelThickness: bevel, bevelSize: bevel, bevelOffset: -bevel, bevelSegments: 2, curveSegments: 8});
+  g.translate(0, 0, bevel);
+  const m = new THREE.Matrix4().makeTranslation(x, pivotY, 0)
+    .multiply(new THREE.Matrix4().makeRotationZ(dir > 0 ? tilt : -tilt))
+    .multiply(new THREE.Matrix4().makeRotationY(dir > 0 ? -Math.PI/2 : Math.PI/2));
+  g.applyMatrix4(m);
+  return g;
+}
+const circlePts = (cz, cy, r, n) => { n = n || 24; return Array.from({length:n}, (_,i) => V2(cz + r*Math.cos(i/n*Math.PI*2), cy + r*Math.sin(i/n*Math.PI*2))); };
+const mirrorPts = pts => pts.map(p => V2(-p.x, p.y)).reverse();
+/* ================= dimensions (metres) & sculpting ================= */
+const HW = 0.93, WF = 1.35, WR = -1.36, R = 0.372, AR = 0.445, SILL = 0.33, GH = 0.86, TRACK = 0.795;
+const A0 = Math.asin((R - SILL) / AR);
+
+// lower-body sculpt: side tumblehome, rounded nose/tail in plan, hood crown
+function dBody(x, y, z){
+  const zn = z / HW, z2 = Math.min(1.1, zn*zn);
+  const yy = Math.min(Math.max(y, 0.25), 1.25);
+  const tum = 1 - 0.045 * Math.pow((yy - 0.64) / 0.5, 2);
+  const pf = 1 - 0.07 * Math.pow(sstep(1.55, 2.37, x), 1.6) - 0.035 * Math.pow(sstep(-1.75, -2.31, x), 1.6);
+  return [ x - 0.12*z2*sstep(1.45, 2.3, x) + 0.07*z2*sstep(-1.7, -2.3, x),
+           y + 0.022*Math.max(0, 1 - z2)*sstep(0.84, 1.0, y)*sstep(0.3, 0.9, x),
+           z * tum * pf ];
+}
+// cabin sculpt: tumblehome, wrap-around glass, roof crown
+function dCab(x, y, z){
+  const zn = z / HW, z2 = zn*zn, h = clamp((y - 1.0) / 0.64, 0, 1), zg = z / GH;
+  const tum = 1 - 0.175 * Math.pow(h, 1.25);
+  const pf = (1 - 0.035 * Math.pow(sstep(-1.75, -2.31, x), 1.6)) * (1 - 0.05 * h * sstep(-0.9, -2.1, x));
+  return [ x - 0.06*z2*sstep(0.1, 0.9, x) + 0.07*z2*sstep(-1.7, -2.3, x),
+           y + 0.035*Math.max(0, 1 - zg*zg)*sstep(1.45, 1.6, y),
+           z * tum * pf ];
+}
+
+const car = new THREE.Group(); scene.add(car);
+const side = new THREE.Group(); car.add(side);           // right-hand (+z) details, mirrored at the end
+const roofParts = [];
+function add(geo, mat, parent, part, pos){
+  const m = new THREE.Mesh(geo, mat); m.castShadow = true;
+  if(pos) m.position.set(pos[0], pos[1], pos[2]);
+  if(part) m.userData.part = part;
+  (parent || car).add(m); return m;
+}
+const G = {};
+['fb','fabs','frebar','header','support','ic','shield','valance','cond','rad','fan','rb','rabs','rrebar'].forEach(k => { G[k] = new THREE.Group(); car.add(G[k]); });
+const HINGE = V3(1.11, 1.045, 0);   // pivot sits just under the hood skin at its rear edge
+G.hood = new THREE.Group(); G.hood.position.copy(HINGE); car.add(G.hood);
+G.car = car;
+const toHood = g => g.translate(-HINGE.x, -HINGE.y, 0);
+const HOOD_OPEN = 1.05;
+const ROD_PIVOT = V3(1.95, 0.935, 0.50), ROD_TOP0 = V3(1.85, 1.04, 0.50);   // pivot, and the hood-underside point it props (hood closed)
+const ROD_OPEN = (() => { const rx = ROD_TOP0.x - HINGE.x, ry = ROD_TOP0.y - HINGE.y, c = Math.cos(HOOD_OPEN), sn = Math.sin(HOOD_OPEN);
+  return V3(HINGE.x + rx*c - ry*sn, HINGE.y + rx*sn + ry*c, ROD_PIVOT.z).sub(ROD_PIVOT); })();
+const ROD_LEN = ROD_OPEN.length(), ROD_UP = ROD_OPEN.clone().normalize(), ROD_STOW = V3(0, 0, -1), Y_AXIS = V3(0, 1, 0);
+
+await checkpoint(35, 'Building the vehicle…');
+/* ================= body core (doors, quarters, tailgate) ================= */
+{
+  const s = new THREE.Shape();
+  s.moveTo(-1.90, SILL); s.lineTo(-1.86, SILL);
+  s.absarc(WR, R, AR, Math.PI + A0, -A0, true);
+  s.lineTo(0.86, SILL); s.lineTo(0.86, 1.075);
+  s.lineTo(-1.35, 1.11); s.quadraticCurveTo(-1.47, 1.115, -1.60, 1.16);
+  s.lineTo(-2.05, 1.18); s.quadraticCurveTo(-2.20, 1.18, -2.22, 1.08);
+  s.lineTo(-2.255, 0.80); s.lineTo(-2.26, 0.62); s.lineTo(-1.90, 0.62);
+  add(sculpt(extrude(s, HW*2, 0.08, {seg:6, curve:20}), dBody, 0.05), M.paint);
+}
+
+/* ================= cabin ================= */
+{
+  const s = new THREE.Shape();
+  s.moveTo(1.25, 0.98); s.lineTo(0.32, 1.565);
+  s.quadraticCurveTo(0.22, 1.625, 0.06, 1.635);
+  s.lineTo(-1.55, 1.642); s.quadraticCurveTo(-1.86, 1.64, -1.98, 1.55);
+  s.lineTo(-2.2104, 0.98);
+  add(sculpt(extrude(s, GH*2, 0.07, {seg:6, curve:22}), dCab, 0.05), M.paint);
+}
+function slopePanel(p0, p1, t0, t1, hw, off, outHint){
+  const d = p1.clone().sub(p0), nrm = V2(d.y, -d.x).normalize(); if(nrm.dot(outHint) < 0) nrm.negate();
+  const U = 14, V = 16, pos = [], idx = [];
+  for(let i=0;i<=U;i++){
+    const t = t0 + (t1 - t0) * i / U, x = p0.x + d.x*t + nrm.x*off, y = p0.y + d.y*t + nrm.y*off;
+    for(let j=0;j<=V;j++) pos.push(x, y, -hw + 2*hw*j/V);
+  }
+  for(let i=0;i<U;i++) for(let j=0;j<V;j++){ const a = i*(V+1)+j, b = a+V+1; idx.push(a,b,a+1, b,b+1,a+1); }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx);
+  deform(g, dCab); g.computeVertexNormals(); return g;
+}
+add(slopePanel(V2(1.25,0.98), V2(0.32,1.565), 0.17, 0.93, 0.735, 0.004, V2(1,1)), M.glass);
+add(slopePanel(V2(-2.2104,0.98), V2(-1.98,1.55), 0.405, 0.93, 0.70, 0.004, V2(-1,0.3)), M.glass);
+add(roundedBox(0.24, 0.05, 1.20, 0.015), M.trim, car, null, [1.13, 1.045, 0]);                  // cowl
+/* wipers: pivot cap + arm + rubber blade on the glass; ang swings them up from parked. n = outward glass normal (x,y); len < 0 runs toward -z */
+function wiper(x, y, z, n, len, ang){
+  const up = V3(n[0], n[1], 0).normalize(), ax = V3(0, 0, 1), sl = ax.clone().cross(up);
+  const p = dCab(x, y, z), g = new THREE.Group(); g.position.set(p[0], p[1], p[2]);
+  g.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(ax, up, sl)); car.add(g);
+  const a = new THREE.Group(); a.rotation.y = ang; g.add(a);
+  const L = Math.abs(len), sx = Math.sign(len);
+  add(new THREE.CylinderGeometry(0.02, 0.025, 0.032, 18), M.gloss, g, null, [0, 0.016, 0]);
+  add(roundedBox(L*0.96, 0.012, 0.018, 0.005), M.gloss, a, null, [sx*L*0.48, 0.03, 0]);
+  add(roundedBox(0.06, 0.02, 0.022, 0.006), M.gloss, a, null, [sx*L*0.55, 0.02, 0]);
+  add(roundedBox(L*0.9, 0.016, 0.009, 0.003), M.trim, a, null, [sx*L*0.55, 0.009, 0.003]);
+}
+wiper(1.036, 1.115, 0.64, [0.532, 0.846], -0.60, 0.85);   // passenger-side pivot (shown mid-sweep)
+wiper(1.036, 1.115, -0.02, [0.532, 0.846], -0.62, 0.85);  // driver-side pivot
+wiper(-2.117, 1.225, 0.0, [-0.927, 0.375], -0.46, -0.6);  // rear
+
+/* side glass + trim (on +z cabin side) */
+function onCab(pts, off, mat, part, depth, holes){
+  const s = new THREE.Shape(pts); (holes || []).forEach(h => s.holes.push(new THREE.Path(h)));
+  let g = depth ? new THREE.ExtrudeGeometry(s, {depth, bevelEnabled:false, curveSegments:10}) : new THREE.ShapeGeometry(s, 10);
+  g.translate(0, 0, GH + off);
+  return add(sculpt(g, dCab, 0.035, 50), mat, side, part);
+}
+{
+  const dlo = new THREE.Shape();
+  dlo.moveTo(0.73, 1.16); dlo.lineTo(0.23, 1.475); dlo.quadraticCurveTo(0.16, 1.515, 0.04, 1.515);
+  dlo.lineTo(-1.45, 1.52); dlo.quadraticCurveTo(-1.74, 1.52, -1.86, 1.43);
+  dlo.lineTo(-1.93, 1.27); dlo.quadraticCurveTo(-1.945, 1.235, -1.90, 1.235);
+  dlo.lineTo(-1.62, 1.235); dlo.lineTo(-1.40, 1.19);
+  const pts = dlo.getPoints(10);
+  onCab(offsetPts(pts, 0.012), 0.002, M.gloss);
+  onCab(pts, 0.004, M.glass);
+  onCab(offsetPts(pts, 0.025), 0.005, M.chrome, null, 0, [offsetPts(pts, 0.013)]);
+  onCab(toV2([[-0.47,1.13],[-0.585,1.13],[-0.62,1.55],[-0.505,1.55]]), 0.007, M.gloss);
+  onCab(toV2([[-1.33,1.15],[-1.42,1.15],[-1.565,1.55],[-1.475,1.55]]), 0.007, M.gloss);
+  onCab(toV2([[0.70,1.14],[0.89,1.13],[0.86,1.25],[0.64,1.235]]), 0.007, M.gloss);
+}
+
+/* ================= roof, spoiler, fin, rails ================= */
+{
+  const s = new THREE.Shape();
+  s.moveTo(0.20, 1.605); s.quadraticCurveTo(0.14, 1.64, 0.0, 1.646);
+  s.lineTo(-1.55, 1.654); s.quadraticCurveTo(-1.84, 1.652, -1.95, 1.578);
+  s.lineTo(-1.85, 1.57); s.lineTo(0.12, 1.57);
+  roofParts.push(add(sculpt(extrude(s, 1.28, 0.018, {seg:3, curve:16}), dCab, 0.05, 45), M.roofBlk));
+
+  const sp = new THREE.Shape();
+  sp.moveTo(-1.78, 1.657); sp.lineTo(-2.06, 1.628); sp.quadraticCurveTo(-2.085, 1.616, -2.06, 1.606);
+  sp.lineTo(-1.96, 1.588); sp.lineTo(-1.84, 1.612);
+  roofParts.push(add(sculpt(extrude(sp, 1.30, 0.014, {seg:3, curve:10}), dCab, 0.05, 45), M.roofBlk));
+
+  const fin = new THREE.Shape();
+  fin.moveTo(-1.56, 1.655); fin.quadraticCurveTo(-1.69, 1.74, -1.79, 1.655);
+  roofParts.push(add(sculpt(extrude(fin, 0.055, 0.012, {seg:2, curve:12}), dCab, 0.03, 45), M.roofBlk));
+
+  [0.54, -0.54].forEach(z => {
+    const c = new THREE.CatmullRomCurve3([V3(-0.02,1.678,z), V3(-0.7,1.694,z), V3(-1.4,1.696,z), V3(-1.84,1.682,z)]);
+    add(deform(new THREE.TubeGeometry(c, 60, 0.016, 10, false), dCab), M.satin);
+    [-0.04, -0.95, -1.80].forEach(x => { const g = roundedBox(0.13, 0.045, 0.04, 0.012); g.translate(x, 1.668, z); add(deform(g, dCab), M.gloss); });
+  });
+  add(deform(facePanel(roundedPoly([[-0.2,1.598],[0.2,1.598],[0.2,1.606],[-0.2,1.606]], 0.003), null, 0.01, 0, -2.062, -1, 0, 1.602), dCab), M.tail, car, 'brakelight');
+}
+
+/* ================= front fender (right; mirrored) ================= */
+{
+  const s = new THREE.Shape();
+  s.moveTo(0.86, SILL); s.lineTo(0.88, SILL);
+  s.absarc(WF, R, AR, Math.PI + A0, 0.36, true);
+  s.lineTo(1.905, 0.5287); s.lineTo(1.985, 0.80); s.lineTo(2.08, 0.80); s.lineTo(2.105, 0.944);
+  // top edge tucks just under the full-width (clamshell) hood
+  s.quadraticCurveTo(1.613, 1.018, 1.10, 1.033); s.lineTo(1.09, 1.072); s.lineTo(0.86, 1.075);
+  add(sculpt(extrude(s, 0.35, 0.08, {seg:6, curve:20, z:0.755}), dBody, 0.04), M.paint, side, 'fender');
+}
+
+/* ================= hood (hinged) ================= */
+const Hq = (t) => { const a = V2(1.10,1.072), b = V2(1.70,1.055), c = V2(2.28,0.958); return V2((1-t)*(1-t)*a.x+2*t*(1-t)*b.x+t*t*c.x, (1-t)*(1-t)*a.y+2*t*(1-t)*b.y+t*t*c.y); };
+const Uq = (t) => { const a = V2(2.27,0.922), b = V2(1.70,1.02), c = V2(1.12,1.035); return V2((1-t)*(1-t)*a.x+2*t*(1-t)*b.x+t*t*c.x, (1-t)*(1-t)*a.y+2*t*(1-t)*b.y+t*t*c.y); };
+{
+  const s = new THREE.Shape();
+  s.moveTo(1.10, 1.072); s.quadraticCurveTo(1.70, 1.055, 2.28, 0.958);
+  s.quadraticCurveTo(2.305, 0.952, 2.305, 0.93); s.lineTo(2.27, 0.922);
+  s.quadraticCurveTo(1.70, 1.02, 1.12, 1.035);
+  add(toHood(sculpt(extrude(s, 1.87, 0.024, {seg:4, curve:24}), dBody, 0.05, 45)), M.paint, G.hood, 'hood');   // full-width clamshell hood over the fender tops
+  // insulation pad under the hood
+  const top = [], bot = [];
+  for(let i=0;i<=16;i++){ const p = Uq(0.25 + 0.6*i/16); top.push(V2(p.x, p.y + 0.002)); bot.push(V2(p.x, p.y - 0.012)); }
+  add(toHood(sculpt(extrude(new THREE.Shape([...top, ...bot.reverse()]), 1.10, 0), dBody, 0.06)), M.bay, G.hood, 'hood');
+  // striker loop
+  const st = new THREE.TorusGeometry(0.018, 0.004, 8, 16, Math.PI); st.rotateZ(Math.PI); st.translate(2.15, 0.94, 0);
+  add(toHood(st), M.satin, G.hood, 'hood');
+  // smoked air deflector on the leading edge
+  // slim, full-width smoked bug deflector hugging the hood's leading edge
+  const d = new THREE.Shape(toV2([[2.15,0.997],[2.23,0.984],[2.288,0.970],[2.296,0.958],[2.288,0.956],[2.23,0.978],[2.15,0.991]]));
+  add(toHood(sculpt(extrude(d, 1.78, 0.002, {seg:1, curve:4}), dBody, 0.04, 50)), M.smoke, G.hood, 'deflector').castShadow = false;
+}
+
+/* Hood hinges: stamped-steel body bracket + gooseneck arm on the hood, joined by a pivot bolt. */
+{
+  const strap = (pts, w) => {                        // flat strap of half-width w along a centreline
+    const L = [], Rr = [];
+    pts.forEach((p, i) => {
+      const a = pts[Math.max(0, i-1)], b = pts[Math.min(pts.length-1, i+1)];
+      const t = V2(b[0]-a[0], b[1]-a[1]).normalize(), n = V2(-t.y, t.x);
+      L.push(V2(p[0] + n.x*w, p[1] + n.y*w)); Rr.push(V2(p[0] - n.x*w, p[1] - n.y*w));
+    });
+    return new THREE.Shape([...L, ...Rr.reverse()]);
+  };
+  const plate = roundedPoly([[1.00,0.935],[1.20,0.935],[1.17,0.99],[1.14,1.058],[1.08,1.058],[1.03,0.99]], [0.012,0.012,0.03,0.025,0.025,0.03]);
+  const goose = [[1.11,1.045],[1.12,1.025],[1.135,1.008],[1.18,0.992],[1.24,0.998],[1.31,1.012],[1.40,1.018]];
+  const hex = (r, len) => new THREE.CylinderGeometry(r, r, len, 6);
+  for(const sgn of [1, -1]){
+    const z = 0.52 * sgn, zi = z - sgn*0.016;         // bracket at z, arm just inboard of it
+    const ps = new THREE.Shape(plate); const lh = new THREE.Path(); lh.absarc(1.11, 0.99, 0.015, 0, Math.PI*2, true); ps.holes.push(lh);
+    const pg = creased(extrude(ps, 0.012, 0.003, {seg:1, curve:8}), 50); pg.translate(0, 0, z);
+    add(pg, M.satin, car, 'hoodhinge');
+    add(roundedBox(0.20, 0.01, 0.06, 0.003), M.satin, car, 'hoodhinge', [1.10, 0.935, z + sgn*0.03]);   // fender-rail flange
+    for(const x of [1.035, 1.165]) add(hex(0.011, 0.012), M.chrome, car, 'hoodhinge', [x, 0.945, z + sgn*0.03]);
+    const ag = creased(extrude(strap(goose, 0.02), 0.012, 0.003, {seg:1, curve:8}), 50); ag.translate(0, 0, zi);
+    add(toHood(ag), M.satin, G.hood, 'hoodhinge');
+    for(const x of [1.30, 1.37]){ const b = hex(0.009, 0.008).rotateX(Math.PI/2); b.translate(x, goose[x < 1.33 ? 5 : 6][1] - 0.004, zi - sgn*0.009); add(toHood(b), M.chrome, G.hood, 'hoodhinge'); }
+    add(new THREE.CylinderGeometry(0.011, 0.011, 0.06, 12).rotateX(Math.PI/2), M.chrome, car, 'hoodhinge', [HINGE.x, HINGE.y, z - sgn*0.008]);   // pivot bolt
+    for(const dz of [0.016, -0.03]) add(new THREE.CylinderGeometry(0.018, 0.018, 0.006, 20).rotateX(Math.PI/2), M.chrome, car, 'hoodhinge', [HINGE.x, HINGE.y, z + sgn*dz]);
+  }
+}
+
+/* ================= headlamps + upper grille ================= */
+{
+  const s = new THREE.Shape();
+  s.moveTo(2.08, 0.80); s.lineTo(2.335, 0.80); s.quadraticCurveTo(2.35, 0.875, 2.31, 0.925);
+  s.lineTo(2.22, 0.932); s.lineTo(2.111, 0.94);   // top tucked under the full-width hood
+  add(sculpt(extrude(s, 0.55, 0.03, {seg:3, curve:14, z:0.64}), dBody, 0.03), M.housing, side, 'headlamp');
+  const lens = new THREE.Shape(offsetPts(s.getPoints(10), 0.012));
+  add(sculpt(extrude(lens, 0.562, 0.036, {seg:3, curve:14, z:0.64}), dBody, 0.03), M.lensCov, side, 'headlamp').castShadow = false;
+  const HX = 2.337, HT = 0.23, HY = 0.87;
+  const hp = (pts, holes, x, mat) => add(sculpt(facePanel(pts, holes, 0.01, 0, x, 1, HT, HY), dBody, 0.02, 50), mat, side, 'headlamp');
+  hp(toV2([[0.40,0.902],[0.84,0.912],[0.862,0.905],[0.862,0.84],[0.852,0.84],[0.852,0.898],[0.40,0.894]]), null, HX + 0.004, M.drl);
+  [[0.56,0.853],[0.70,0.851]].forEach(([z,y]) => { hp(circlePts(z, y, 0.024), null, HX + 0.004, M.lens); hp(circlePts(z, y, 0.033), [circlePts(z, y, 0.024)], HX + 0.003, M.chrome); });
+  hp(toV2([[0.42,0.834],[0.50,0.832],[0.50,0.840],[0.42,0.842]]), null, HX + 0.004, M.amber);
+  // headlight moulding: gloss-black trim strip along the lower edge of the lamp, wrapping round the corner
+  const hm = new THREE.Shape(); hm.moveTo(2.09, 0.782); hm.lineTo(2.345, 0.782); hm.quadraticCurveTo(2.36, 0.783, 2.358, 0.797);
+  hm.lineTo(2.352, 0.81); hm.lineTo(2.09, 0.81);
+  add(sculpt(extrude(hm, 0.60, 0.006, {seg:2, curve:8, z:0.64}), dBody, 0.03), M.gloss, side, 'headlampmoulding');
+
+  const u = new THREE.Shape(); u.moveTo(2.20, 0.80); u.lineTo(2.335, 0.80); u.quadraticCurveTo(2.35, 0.875, 2.31, 0.93); u.lineTo(2.20, 0.945);
+  add(sculpt(extrude(u, 0.73, 0, {curve:14}), dBody, 0.04), M.gloss, car, 'uppergrille');
+  [0.852, 0.882].forEach(y => add(sculpt(facePanel(roundedPoly([[-0.345,y-0.003],[0.345,y-0.003],[0.345,y+0.003],[-0.345,y+0.003]], 0.002, 2), null, 0.008, 0, HX + 0.003, 1, HT, HY), dBody, 0.03), M.chrome, car, 'uppergrille'));
+}
+
+await checkpoint(50, 'Adding body details…');
+/* Header panel: separate upper-front carrier behind the grille and lamps. */
+{
+  const outer = roundedPoly([[-0.86,0.75],[0.86,0.75],[0.86,0.93],[-0.86,0.93]],0.025);
+  const opening = roundedPoly([[-0.47,0.79],[0.47,0.79],[0.47,0.895],[-0.47,0.895]],0.015);
+  const panel = facePanel(outer,[opening],0.035,0.006,2.265,1,0,0.84);
+  add(sculpt(panel,dBody,0.04,50),M.trim,G.header,'headerpanel');
+  for(const z of [-0.73,0.73]){
+    add(roundedBox(0.14,0.035,0.14,0.008),M.trim,G.header,'headerpanel',[2.22,0.915,z]);
+    add(new THREE.CylinderGeometry(0.012,0.012,0.01,6),M.satin,G.header,'headerpanel',[2.22,0.938,z]);
+  }
+}
+
+/* ================= front bumper cover (explodes forward) ================= */
+{
+  const s = new THREE.Shape();
+  s.moveTo(1.905, 0.5287); s.lineTo(1.985, 0.80); s.lineTo(2.335, 0.80);
+  s.quadraticCurveTo(2.362, 0.72, 2.362, 0.62); s.lineTo(2.356, 0.46);
+  s.quadraticCurveTo(2.345, 0.305, 2.18, 0.29);
+  s.absarc(WF, R, AR, -0.19, 0.36, false);
+  add(sculpt(extrude(s, 1.88, 0.07, {seg:5, curve:20}), dBody, 0.04), M.paint, G.fb, 'fbumper');
+
+  const fp = (pts, holes, depth, bevel, x, tilt, py, mat, part, both, maxE) => {
+    const mk = p => add(sculpt(facePanel(p, holes, depth, bevel, x, 1, tilt, py), dBody, maxE || 0.05, 50), mat, G.fb, part);
+    mk(pts); if(both){ const hL = holes ? holes.map(mirrorPts) : null; add(sculpt(facePanel(mirrorPts(pts), hL, depth, bevel, x, 1, tilt, py), dBody, maxE || 0.05, 50), mat, G.fb, part); }
+  };
+  // lower grille: chrome frame + honeycomb insert
+  const outer = roundedPoly([[-0.53,0.395],[0.53,0.395],[0.44,0.735],[-0.44,0.735]], 0.06);
+  const inner = roundedPoly([[-0.50,0.42],[0.50,0.42],[0.425,0.712],[-0.425,0.712]], 0.045);
+  fp(outer, [inner], 0.03, 0.005, 2.374, 0, 0.565, M.chrome, 'grille');
+  fp(inner, null, 0.03, 0, 2.364, 0, 0.565, M.grille, 'grille');
+  // front plate
+  fp(roundedPoly([[-0.165,0.44],[0.165,0.44],[0.165,0.602],[-0.165,0.602]], 0.012), null, 0.03, 0.003, 2.39, 0, 0.521, M.gloss, 'platebracket');   // plate bracket
+  const pl = facePanel(roundedPoly([[-0.1525,0.445],[0.1525,0.445],[0.1525,0.597],[-0.1525,0.597]], 0.008), null, 0.012, 0, 2.395, 1, 0, 0.521);
+  add(deform(pl, dBody), M.plate, G.fb, 'fbumper');
+  // fog lamps + covers
+  fp(roundedPoly([[0.60,0.40],[0.79,0.375],[0.845,0.43],[0.83,0.54],[0.70,0.53]], 0.02), null, 0.03, 0.004, 2.372, 0, 0.46, M.gloss, 'fogcover', true);
+  fp(roundedPoly([[0.605,0.525],[0.70,0.535],[0.83,0.545],[0.83,0.552],[0.70,0.542],[0.605,0.532]], 0.002, 2), null, 0.01, 0, 2.378, 0, 0.46, M.chrome, 'fogcover', true);
+  fp(circlePts(0.725, 0.455, 0.034), null, 0.012, 0, 2.38, 0, 0.46, M.fog, 'foglight', true);
+  fp(circlePts(0.725, 0.455, 0.043), [circlePts(0.725, 0.455, 0.034)], 0.012, 0, 2.379, 0, 0.46, M.chrome, 'foglight', true);
+  // Two flush parking sensors, attached to the front bumper.
+  for(const [z, id] of [[0.68,'sensorFR'],[-0.68,'sensorFL']]){
+    fp(circlePts(z,0.64,0.024,24),null,0.012,0.002,2.374,0,0.64,M.trim,id);
+    fp(circlePts(z,0.64,0.018,24),null,0.008,0.001,2.382,0,0.64,M.paint,id);
+  }
+  // chin skid plate
+  fp(roundedPoly([[-0.46,0.30],[0.46,0.30],[0.41,0.35],[-0.41,0.35]], 0.012), null, 0.02, 0.003, 2.293, -0.97, 0.3244, M.satin, 'fbumper');
+}
+
+/* Under-engine inspection pieces, shown as separate trays in the exploded view. */
+{
+ const shieldMat = std({color:col('#20252b'),roughness:0.76,metalness:0.15});
+ add(roundedBox(0.92,0.035,1.06,0.025),shieldMat,G.shield,'engineshield',[1.48,0.285,0]);
+ // Raised stiffening ribs and service hatch.
+ for(const z of [-0.36,-0.18,0.18,0.36])
+   add(roundedBox(0.74,0.022,0.018,0.006),M.trim,G.shield,'engineshield',[1.48,0.312,z]);
+ add(roundedBox(0.22,0.012,0.26,0.015),M.bay,G.shield,'engineshield',[1.47,0.311,0]);
+ for(const x of [1.08,1.88]) for(const z of [-0.46,0.46])
+   add(new THREE.CylinderGeometry(0.018,0.018,0.012,12),M.satin,G.shield,'engineshield',[x,0.312,z]);
+ // Lower front filler / valance: a large, flat plastic panel under the bumper, front edge following the bumper curve.
+ {
+  const vs = new THREE.Shape();                      // plan view: shape x = car x, shape y = car z
+  vs.moveTo(1.92, -0.74); vs.lineTo(1.96, -0.80); vs.lineTo(2.14, -0.80);
+  vs.quadraticCurveTo(2.46, 0, 2.14, 0.80);
+  vs.lineTo(1.96, 0.80); vs.lineTo(1.92, 0.74); vs.lineTo(1.92, -0.74);
+  const hole = (x, z, r) => { const h = new THREE.Path(); h.absarc(x, z, r, 0, Math.PI*2, true); vs.holes.push(h); };
+  for(const [x, z] of [[2.17,-0.55],[2.23,-0.25],[2.23,0.25],[2.17,0.55],[1.97,-0.65],[1.97,-0.30],[1.97,0.30],[1.97,0.65]]) hole(x, z, 0.011);
+  for(const z of [-0.12,-0.06,0,0.06,0.12]){           // drain / air slots
+   const h = new THREE.Path(), x0 = 2.02, x1 = 2.15, r = 0.011;
+   h.absarc(x0, z, r, Math.PI/2, Math.PI*1.5, false); h.absarc(x1, z, r, -Math.PI/2, Math.PI/2, false); h.closePath(); vs.holes.push(h);
+  }
+  const vg = creased(extrude(vs, 0.018, 0.005, {seg:2, curve:12}), 50); vg.rotateX(Math.PI/2); vg.translate(0, 0.255, 0);
+  add(vg, M.trim, G.valance, 'valance');
+  for(const z of [-0.62,-0.28,0.28,0.62])            // mounting tabs to the engine shield
+   add(roundedBox(0.06,0.014,0.08,0.005),M.trim,G.valance,'valance',[1.935,0.269,z]);
+ }
+}
+/* ================= arches, lower moulding, door lines, handles ================= */
+{
+  const arch = (a0, a1) => { const s = new THREE.Shape(); s.absarc(0, 0, 0.525, a0, a1, false); s.absarc(0, 0, 0.44, a1, a0, true); return s; };
+  [[WF, -0.16, Math.PI + 0.12, 'fendermoulding'], [WR, -0.12, Math.PI + 0.16, null]].forEach(([x, a, b, part]) => {
+    const g = extrude(arch(a, b), 0.075, 0.014, {seg:3, curve:30}); g.translate(x, R, HW - 0.002);
+    add(sculpt(g, dBody, 0.03, 50), M.trim, side, part);
+  });
+  const md = roundedBox(1.66, 0.22, 0.05, 0.02); md.translate(-0.01, 0.43, HW + 0.006);
+  add(sculpt(md, dBody, 0.1, 50), M.trim, side, 'moulding');
+  const ms = roundedBox(1.50, 0.016, 0.012, 0.005); ms.translate(-0.01, 0.505, HW + 0.032);
+  add(deform(ms, dBody), M.chrome, side, 'moulding');
+
+  const gapLine = (x1,y1,x2,y2) => {
+    const len = Math.hypot(x2-x1, y2-y1), g = new THREE.PlaneGeometry(len, 0.0055, Math.ceil(len/0.03), 1);
+    g.rotateZ(Math.atan2(y2-y1, x2-x1)); g.translate((x1+x2)/2, (y1+y2)/2, HW + 0.0015);
+    add(deform(g, dBody), M.gap, side).castShadow = false;
+  };
+  const gapArc = (cx, cy, r, t0, t1) => { const g = new THREE.RingGeometry(r - 0.00275, r + 0.00275, 28, 1, t0, t1 - t0); g.translate(cx, cy, HW + 0.0015); add(deform(g, dBody), M.gap, side).castShadow = false; };
+  gapLine(0.86, 0.545, 0.86, 1.03);
+  gapLine(-0.53, 0.545, -0.53, 1.03);
+  gapLine(-1.30, 0.90, -1.30, 1.05);
+  gapArc(WR, R, 0.531, 0.332, 1.4575);
+  const handle = (x, y, id) => { const g = roundedBox(0.17, 0.035, 0.032, 0.013); g.translate(x, y, HW + 0.004); add(deform(g, dBody), M.chrome, side, id); };
+  handle(0.28, 1.0, 'handleFR'); handle(-0.90, 1.012, 'handleRR');
+}
+
+/* ================= mirror ================= */
+{
+  const b = dCab(0.80, 1.19, GH);
+  const mg = new THREE.Group(); mg.position.set(b[0], b[1], b[2]); side.add(mg);
+  add(roundedBox(0.09, 0.045, 0.15, 0.016), M.gloss, mg, 'mirror', [0, 0, 0.06]);
+  const head = add(roundedBox(0.12, 0.14, 0.235, 0.045), M.roofBlk, mg, 'mirror', [-0.02, 0.04, 0.17]); head.rotation.y = -0.06; roofParts.push(head);
+  const gl = add(new THREE.PlaneGeometry(0.2, 0.11), M.mirror, mg, 'mirror', [-0.0815, 0.04, 0.17]); gl.rotation.y = -Math.PI/2 - 0.06;
+  add(roundedBox(0.02, 0.014, 0.14, 0.006), M.amber, mg, 'mirror', [0.035, -0.012, 0.19]);
+}
+
+/* ================= rear lamps, tailgate, plate ================= */
+{
+  const wrapBand = (pOut, pIn, z0, xEnd, y0, h) => {
+    const xr = -2.226, cx = xr + 0.08, cz = HW - 0.08, oR = 0.08 + pOut, iR = 0.08 - pIn, pts = [];
+    pts.push([xr - pOut, z0]);
+    for(let k=0;k<=12;k++){ const a = Math.PI - (Math.PI/2)*k/12; pts.push([cx + oR*Math.cos(a), cz + oR*Math.sin(a)]); }
+    pts.push([xEnd, cz + oR]); pts.push([xEnd, cz + iR]);
+    for(let k=12;k>=0;k--){ const a = Math.PI - (Math.PI/2)*k/12; pts.push([cx + iR*Math.cos(a), cz + iR*Math.sin(a)]); }
+    pts.push([xr + pIn, z0]);
+    const g = new THREE.ExtrudeGeometry(new THREE.Shape(pts.map(([x,z]) => V2(x, -z))), {depth:h, bevelEnabled:false});
+    g.applyMatrix4(new THREE.Matrix4().makeRotationX(-Math.PI/2)); g.translate(0, y0, 0);
+    return sculpt(g, dBody, 0.02, 35);
+  };
+  add(wrapBand(0.016, 0.03, 0.665, -2.00, 0.975, 0.105), M.tail, side, 'tailOuter');
+  add(wrapBand(0.022, 0.0, 0.675, -2.02, 1.035, 0.012), M.tailLed, side, 'tailOuter');
+  add(wrapBand(0.021, 0.0, 0.675, -2.08, 0.99, 0.02), M.amber, side, 'tailOuter');
+
+  const RX = -2.2263, RT = 0.124, RY = 1.035;
+  const rp = (ptsR, x, mat, part, depth, bevel, tilt, py, both) => {
+    const mk = p => add(sculpt(facePanel(p, null, depth || 0.03, bevel || 0, x, -1, tilt === undefined ? RT : tilt, py || RY), dBody, 0.02, 50), mat, car, part);
+    mk(ptsR); if(both !== false) mk(mirrorPts(ptsR));
+  };
+  rp(roundedPoly([[0.37,1.00],[0.645,0.99],[0.645,1.075],[0.39,1.058]], 0.012), RX - 0.010, M.tail, 'tailInner', 0.03, 0.004);
+  rp(toV2([[0.39,1.032],[0.645,1.034],[0.645,1.042],[0.39,1.040]]), RX - 0.016, M.tailLed, 'tailInner', 0.01);
+  rp(roundedPoly([[0.41,1.006],[0.53,1.002],[0.53,1.022],[0.41,1.026]], 0.004), RX - 0.016, M.reverse, 'tailInner', 0.01);
+  rp(roundedPoly([[-0.36,1.012],[0.36,1.012],[0.36,1.05],[-0.36,1.05]], 0.01), RX - 0.008, M.gloss, null, 0.03, 0.004, RT, RY, false);
+  rp(toV2([[-0.36,1.003],[0.36,1.003],[0.36,1.008],[-0.36,1.008]]), RX - 0.009, M.chrome, null, 0.01, 0, RT, RY, false);
+  // tailgate shut lines
+  const gl = (pts, x, tilt, py) => add(deform(facePanel(toV2(pts), null, 0.004, 0, x, -1, tilt, py), dBody), M.gap, car).castShadow = false;
+  for(const s of [1, -1]){
+    gl([[s*0.652,0.64],[s*0.658,0.64],[s*0.658,0.80],[s*0.652,0.80]], -2.2593, 0.028, 0.72);
+    gl([[s*0.652,0.80],[s*0.658,0.80],[s*0.658,1.085],[s*0.652,1.085]], -2.239, 0.124, 0.94);
+  }
+  gl([[-0.655,0.637],[0.655,0.637],[0.655,0.643],[-0.655,0.643]], -2.2609, 0.028, 0.64);
+  // plate recess, plate, plate light
+  const PX = -2.2554, PY = 0.786;
+  add(deform(facePanel(roundedPoly([[-0.17,0.70],[0.17,0.70],[0.17,0.872],[-0.17,0.872]], 0.015), null, 0.03, 0.003, PX - 0.010, -1, 0.028, PY), dBody), M.gloss, car, 'platebracket');   // plate bracket
+  add(deform(facePanel(roundedPoly([[-0.1525,0.71],[0.1525,0.71],[0.1525,0.862],[-0.1525,0.862]], 0.008), null, 0.012, 0, PX - 0.014, -1, 0.028, PY), dBody), M.plate);
+  add(deform(facePanel(roundedPoly([[-0.12,0.878],[0.12,0.878],[0.12,0.893],[-0.12,0.893]], 0.004), null, 0.02, 0.002, PX - 0.010, -1, 0.1, 0.885), dBody), M.gloss, car, 'platelight');
+  [0.07, -0.07].forEach(z => add(deform(facePanel(roundedPoly([[z-0.025,0.881],[z+0.025,0.881],[z+0.025,0.89],[z-0.025,0.89]], 0.002), null, 0.01, 0, PX - 0.013, -1, 0.1, 0.885), dBody), M.plateLt, car, 'platelight'));
+}
+
+/* ================= rear bumper cover (explodes backward) ================= */
+{
+  const a1 = Math.PI - Math.asin((0.62 - R) / AR);
+  const s = new THREE.Shape();
+  s.moveTo(WR + AR*Math.cos(a1), 0.62); s.lineTo(-2.262, 0.62);
+  s.quadraticCurveTo(-2.30, 0.61, -2.30, 0.53); s.lineTo(-2.295, 0.42);
+  s.quadraticCurveTo(-2.29, 0.30, -2.17, 0.29);
+  s.absarc(WR, R, AR, Math.PI + Math.asin((R - 0.29) / AR), a1 + 0.02, true);
+  add(sculpt(extrude(s, 1.88, 0.07, {seg:5, curve:20}), dBody, 0.04), M.paint, G.rb, 'rbumper');
+  const rp = (pts, holes, x, tilt, py, mat, part, depth, bevel) => add(sculpt(facePanel(pts, holes, depth || 0.02, bevel || 0, x, -1, tilt, py), dBody, 0.05, 50), mat, G.rb, part);
+  rp(roundedPoly([[-0.52,0.30],[0.52,0.30],[0.48,0.385],[-0.48,0.385]], 0.015), null, -2.2806, -0.557, 0.345, M.satin, 'rskid', 0.02, 0.003);
+  [-0.3, 0, 0.3].forEach(z => rp(roundedPoly([[z-0.012,0.305],[z+0.012,0.305],[z+0.012,0.375],[z-0.012,0.375]], 0.004), null, -2.2836, -0.557, 0.345, M.chrome, 'rskid', 0.01));
+  for(const sgn of [1,-1]){
+    rp(roundedPoly([[sgn*0.66,0.50],[sgn*0.86,0.50],[sgn*0.86,0.52],[sgn*0.66,0.52]].map(p => sgn < 0 ? p : p), 0.006), null, -2.3015, 0, 0.51, M.tail, 'rbumper', 0.01);
+    const sensorId = sgn > 0 ? 'sensorRR' : 'sensorRL';
+    rp(circlePts(sgn*0.52,0.55,0.024,24),null,-2.31,0,0.55,M.trim,sensorId,0.012,0.002);
+    rp(circlePts(sgn*0.52,0.55,0.018,24),null,-2.318,0,0.55,M.paint,sensorId,0.008,0.001);
+  }
+  // step pad: wide black grip plate on top of the bumper that overhangs the rear face, with a wrap-down lip and satin anti-slip ribs
+  const pad = roundedBox(0.115, 0.026, 1.40, 0.007); pad.translate(-2.268, 0.638, 0);
+  add(deform(pad, dBody), M.trim, G.rb, 'steppad');
+  const lip = roundedBox(0.022, 0.07, 1.40, 0.007); lip.translate(-2.318, 0.612, 0);
+  add(deform(lip, dBody), M.trim, G.rb, 'steppad');
+  for(let i = 0; i < 27; i++){
+    const rib = roundedBox(0.092, 0.008, 0.016, 0.003); rib.translate(-2.268, 0.654, -0.65 + i*0.05);
+    add(deform(rib, dBody), M.satin, G.rb, 'steppad');
+  }
+}
+// exhaust tips
+[0.60, -0.60].forEach(z => {
+  add(new THREE.CylinderGeometry(0.042, 0.042, 0.16, 28, 1, true).rotateZ(Math.PI/2), M.chrome, car, null, [-2.24, 0.262, z]);
+  add(new THREE.CircleGeometry(0.036, 24).rotateY(-Math.PI/2), M.liner, car, null, [-2.30, 0.262, z]);
+  add(new THREE.CylinderGeometry(0.03, 0.03, 0.5, 12).rotateZ(Math.PI/2), M.rotor, car, null, [-1.95, 0.27, z]);
+});
+
+await checkpoint(62, 'Preparing bumper layers…');
+/* ================= crash structure (front & rear) ================= */
+function rebarBeam(x0, x1, width, grp, part, dir){
+  const s = new THREE.Shape(toV2([[x0,0.43],[x1,0.43],[x1,0.575],[x0,0.575]]));
+  add(sculpt(extrude(s, width, 0.008, {seg:2, curve:4}), dBody, 0.06), M.rebar, grp, part);
+  const fx = dir > 0 ? x1 : x0, bx = dir > 0 ? x0 : x1;
+  for(let z = -0.6; z <= 0.61; z += 0.2) add(sculpt(facePanel(circlePts(z, 0.502, 0.014, 16), null, 0.004, 0, fx + dir*0.0015, dir, 0, 0.502), dBody, 0.03), M.gap, grp, part);
+  add(sculpt(facePanel(roundedPoly([[-0.72,0.545],[0.72,0.545],[0.72,0.558],[-0.72,0.558]], 0.005), null, 0.006, 0, fx + dir*0.001, dir, 0, 0.55), dBody, 0.03), M.satin, grp, part);
+  [0.55, -0.55].forEach(z => {
+    add(roundedBox(0.165, 0.10, 0.10, 0.01), M.rebar, grp, part, [bx - dir*0.0825, 0.50, z]);
+    add(roundedBox(0.012, 0.18, 0.16, 0.004), M.satin, grp, part, [bx - dir*0.171, 0.50, z]);
+  });
+}
+function absorber(xs, width, grp, part){
+  const s = new THREE.Shape(roundedPoly(xs, 0.015, 3));
+  add(sculpt(extrude(s, width, 0.012, {seg:2, curve:4}), dBody, 0.06), M.foam, grp, part);
+}
+absorber([[2.27,0.40],[2.35,0.40],[2.35,0.63],[2.27,0.63]], 1.46, G.fabs, 'fabsorber');
+rebarBeam(2.19, 2.265, 1.60, G.frebar, 'frebar', 1);
+absorber([[-2.29,0.40],[-2.225,0.40],[-2.225,0.58],[-2.29,0.58]], 1.40, G.rabs, 'rabsorber');
+rebarBeam(-2.225, -2.155, 1.52, G.rrebar, 'rrebar', -1);
+// black brackets: reinforcement-bar end brackets (fly out with the bar) and bumper-to-fender side brackets (stay on the car)
+{
+  const bk = std({color:col('#16181b'), roughness:0.55, metalness:0.35});
+  const hex = () => new THREE.CylinderGeometry(0.011, 0.011, 0.01, 6).rotateX(Math.PI/2);
+  for(const sgn of [1, -1]){
+    const plate = roundedBox(0.17, 0.21, 0.014, 0.008); plate.translate(2.205, 0.50, sgn*0.815);
+    add(deform(plate, dBody), bk, G.frebar, 'frebarbracket');
+    const flange = roundedBox(0.014, 0.21, 0.11, 0.005); flange.translate(2.127, 0.50, sgn*0.86);
+    add(deform(flange, dBody), bk, G.frebar, 'frebarbracket');
+    for(const y of [0.44, 0.56]){ const h = hex(); h.translate(2.23, y, sgn*0.826); add(deform(h, dBody), bk, G.frebar, 'frebarbracket'); }
+    const fs = new THREE.Shape(roundedPoly([[1.925,0.55],[1.985,0.55],[2.04,0.76],[2.14,0.76],[2.14,0.82],[1.995,0.82]], 0.012));
+    [[1.955,0.60],[2.10,0.79]].forEach(([x, y]) => { const h = new THREE.Path(); h.absarc(x, y, 0.009, 0, Math.PI*2, true); fs.holes.push(h); });
+    const fg = creased(extrude(fs, 0.016, 0.004, {seg:1, curve:6}), 50); fg.translate(0.03, 0, sgn*0.875);
+    add(deform(fg, dBody), bk, car, 'fbracket');
+    const tab = roundedBox(0.05, 0.05, 0.03, 0.006); tab.translate(1.99, 0.69, sgn*0.86);
+    add(deform(tab, dBody), bk, car, 'fbracket');
+  }
+}
+[0.55, -0.55].forEach(z => { add(roundedBox(0.34, 0.12, 0.10, 0.01), M.rebar, car, null, [1.85, 0.50, z]); add(roundedBox(0.30, 0.12, 0.10, 0.01), M.rebar, car, null, [-1.83, 0.49, z]); });
+
+/* ================= cooling: condenser + radiator ================= */
+{
+  // intercooler (turbo models): smaller silver core low in front of the condenser, with cast end tanks and pipe stubs
+  {
+    const icMat = std({color:col('#cfd4da'), map:condTex, metalness:0.9, roughness:0.3});
+    add(new THREE.BoxGeometry(0.045, 0.16, 0.80), icMat, G.ic, 'intercooler', [2.15, 0.50, 0]);
+    for(const z of [-0.43, 0.43]){
+      add(roundedBox(0.06, 0.18, 0.07, 0.015), M.satin, G.ic, 'intercooler', [2.15, 0.50, z]);
+      add(new THREE.CylinderGeometry(0.024, 0.024, 0.05, 18).rotateX(Math.PI/2), M.satin, G.ic, 'intercooler', [2.15, 0.54, z + Math.sign(z)*0.055]);
+    }
+    for(const z of [-0.2, 0.2]) add(roundedBox(0.02, 0.03, 0.03, 0.005), M.satin, G.ic, 'intercooler', [2.15, 0.595, z]);   // mounting lugs
+  }
+  add(new THREE.BoxGeometry(0.018, 0.44, 1.16), M.cond, G.cond, 'condenser', [2.085, 0.64, 0]);
+  [0.595, -0.595].forEach(z => add(new THREE.CylinderGeometry(0.02, 0.02, 0.46, 14), M.satin, G.cond, 'condenser', [2.085, 0.64, z]));
+  add(new THREE.CylinderGeometry(0.009, 0.009, 0.14, 10).rotateZ(Math.PI/2), M.satin, G.cond, 'condenser', [2.03, 0.80, 0.595]);
+  add(new THREE.BoxGeometry(0.035, 0.44, 1.08), M.rad, G.rad, 'radiator', [2.025, 0.64, 0]);
+  [0.57, -0.57].forEach(z => add(roundedBox(0.05, 0.47, 0.06, 0.012), M.radTank, G.rad, 'radiator', [2.025, 0.64, z]));
+  add(new THREE.CylinderGeometry(0.018, 0.018, 0.04, 16), M.radTank, G.rad, 'radiator', [2.025, 0.895, 0.57]);
+  add(new THREE.CylinderGeometry(0.024, 0.024, 0.012, 16), M.satin, G.rad, 'radiator', [2.025, 0.918, 0.57]);
+  add(new THREE.CylinderGeometry(0.022, 0.022, 0.08, 16).rotateZ(Math.PI/2), M.radTank, G.rad, 'radiator', [1.975, 0.82, 0.57]);
+  add(new THREE.CylinderGeometry(0.022, 0.022, 0.08, 16).rotateZ(Math.PI/2), M.radTank, G.rad, 'radiator', [1.975, 0.46, -0.57]);
+  // cooling fan: black plastic shroud with one large fan (explodes out behind the radiator)
+  {
+    const sh = new THREE.Shape(roundedPoly([[-0.53,-0.23],[0.53,-0.23],[0.53,0.23],[-0.53,0.23]], 0.03).map(p => V2(p.x, p.y)));
+    const hole = new THREE.Path(); hole.absarc(0, 0, 0.205, 0, Math.PI*2, true); sh.holes.push(hole);
+    const g = new THREE.ExtrudeGeometry(sh, {depth:0.04, bevelEnabled:false, curveSegments:48}).rotateY(Math.PI/2);
+    add(g, M.radTank, G.fan, 'coolfan', [1.945, 0.64, 0]);
+    const ring = add(new THREE.TorusGeometry(0.212, 0.012, 10, 64).rotateY(Math.PI/2), M.radTank, G.fan, 'coolfan', [1.95, 0.64, 0]);
+    add(new THREE.CylinderGeometry(0.065, 0.065, 0.05, 28).rotateZ(Math.PI/2), M.radTank, G.fan, 'coolfan', [1.93, 0.64, 0]);   // hub
+    add(new THREE.CylinderGeometry(0.075, 0.075, 0.07, 28).rotateZ(Math.PI/2), M.engCov, G.fan, 'coolfan', [1.875, 0.64, 0]);  // motor
+    for(let i=0;i<3;i++){ const st = add(roundedBox(0.012, 0.21, 0.016, 0.004), M.radTank, G.fan, 'coolfan', [1.905, 0.64, 0]); st.rotation.x = i*Math.PI*2/3 + 0.5; st.translateY(0.135); }
+    for(let i=0;i<9;i++){
+      const b = add(roundedBox(0.006, 0.145, 0.075, 0.012), M.radTank, G.fan, 'coolfan', [1.935, 0.64, 0]);
+      b.rotation.x = i*Math.PI*2/9; b.translateY(0.128); b.rotateY(0.42);
+    }
+  }
+}
+
+/* ================= engine bay ================= */
+{
+  add(new THREE.BoxGeometry(1.0, 0.02, 1.12), M.bay, car, null, [1.48, 0.42, 0]);
+  add(new THREE.BoxGeometry(0.02, 0.62, 1.12), M.bay, car, null, [1.02, 0.72, 0]);
+  [0.555, -0.555].forEach(z => add(new THREE.BoxGeometry(0.96, 0.54, 0.02), M.bay, car, null, [1.49, 0.69, z]));
+  [0.47, -0.47].forEach(z => {
+    add(new THREE.CylinderGeometry(0.075, 0.09, 0.14, 24), M.bay, car, null, [1.34, 0.905, z]);
+    add(new THREE.CylinderGeometry(0.05, 0.05, 0.012, 20), M.satin, car, null, [1.34, 0.978, z]);
+  });
+  // Central engine, battery on the viewer's right, two fluid tanks on the left.
+  add(roundedBox(0.44,0.30,0.56,0.03), M.engine, car, null, [1.48,0.66,0]);
+  add(roundedBox(0.40,0.09,0.50,0.035), M.engCov, car, null, [1.46,0.86,0]);
+  [-0.18,-0.06,0.06,0.18].forEach(z => add(roundedBox(0.30,0.012,0.028,0.005), M.engine, car, null, [1.47,0.907,z]));
+  add(new THREE.CylinderGeometry(0.028,0.028,0.02,20), M.yellow, car, null, [1.36,0.92,-0.18]);
+  // Enlarged illustrative A/C compressor ahead of the engine, behind the cooling pack.
+  const compressor = new THREE.Group(); compressor.position.set(1.81,0.78,0.14); compressor.scale.set(1.20,1.45,1.65); car.add(compressor);
+  const ac = (geometry, material, position) => add(geometry, material, compressor, 'accompressor', position);
+  ac(new THREE.CylinderGeometry(0.082,0.075,0.145,28).rotateX(Math.PI/2), M.satin, [0,0,0]);
+  // Cast housing ribs and rear end cover.
+  for(const z of [-0.045,0,0.045])
+    ac(new THREE.TorusGeometry(0.080,0.005,8,28), M.engine, [0,0,z]);
+  ac(new THREE.CylinderGeometry(0.068,0.073,0.025,24).rotateX(Math.PI/2), M.engine, [0,0,0.085]);
+  // Dark grooved pulley and front hub.
+  ac(new THREE.CylinderGeometry(0.091,0.091,0.032,32).rotateX(Math.PI/2), M.gloss, [0,0,-0.088]);
+  for(const z of [-0.102,-0.091,-0.080])
+    ac(new THREE.TorusGeometry(0.089,0.003,8,32), M.rubber, [0,0,z]);
+  ac(new THREE.CylinderGeometry(0.054,0.054,0.012,24).rotateX(Math.PI/2), M.satin, [0,0,-0.109]);
+  ac(new THREE.CylinderGeometry(0.012,0.012,0.018,6).rotateX(Math.PI/2), M.chrome, [0,0,-0.120]);
+  // Mounting ears and refrigerant connections.
+  for(const x of [-0.065,0.065])
+    ac(roundedBox(0.035,0.045,0.045,0.008), M.satin, [x,-0.064,0.025]);
+  ac(roundedBox(0.075,0.035,0.052,0.008), M.satin, [0,0.081,0.025]);
+  for(const x of [-0.022,0.022])
+    ac(new THREE.CylinderGeometry(0.012,0.012,0.04,12), M.satin, [x,0.11,0.025]);
+  // Battery case, top, terminals and hold-down strap.
+  add(roundedBox(0.26,0.20,0.20,0.012), M.battery, car, null, [1.77,0.78,-0.40]);
+  add(roundedBox(0.27,0.025,0.21,0.006), M.engCov, car, null, [1.77,0.89,-0.40]);
+  add(new THREE.CylinderGeometry(0.018,0.018,0.025,14), M.red, car, null, [1.86,0.92,-0.36]);
+  add(new THREE.CylinderGeometry(0.018,0.018,0.025,14), M.satin, car, null, [1.68,0.92,-0.36]);
+  add(roundedBox(0.025,0.018,0.22,0.004), M.rebar, car, null, [1.77,0.913,-0.40]);
+  // Compact air box toward the rear right.
+  add(roundedBox(0.18,0.13,0.18,0.018), M.engCov, car, null, [1.12,0.80,-0.40]);
+  // Translucent coloured tanks make their different functions easy to identify.
+  const blueFluid = phys({color:col('#399ddd'), roughness:0.3, metalness:0, transparent:true, opacity:0.84});
+  const pinkFluid = phys({color:col('#ee78a1'), roughness:0.3, metalness:0, transparent:true, opacity:0.88});
+  add(roundedBox(0.22,0.20,0.16,0.025), blueFluid, car, 'washer', [1.80,0.78,0.42]);
+  add(new THREE.CylinderGeometry(0.025,0.038,0.06,18), M.tank, car, 'washer', [1.83,0.90,0.42]);
+  add(new THREE.CylinderGeometry(0.037,0.037,0.018,24), M.blue, car, 'washer', [1.83,0.939,0.42]);
+  add(roundedBox(0.19,0.17,0.17,0.025), pinkFluid, car, 'coolant', [1.45,0.83,0.42]);
+  add(new THREE.CylinderGeometry(0.029,0.033,0.025,20), M.tank, car, 'coolant', [1.45,0.927,0.42]);
+  add(new THREE.CylinderGeometry(0.037,0.037,0.016,24), M.gloss, car, 'coolant', [1.45,0.948,0.42]);
+  // Coolant overflow hose routed alongside the engine.
+  add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([V3(1.54,0.86,0.44),V3(1.66,0.79,0.51),V3(1.95,0.82,0.55)]),24,0.012,8,false), M.rubber, car, 'coolant');
+  // radiator support frame + cover + hood latch
+  // Black stamped-metal core support: open centre for airflow through the cooling pack.
+  const supportMetal = std({color:col('#101318'), metalness:0.72, roughness:0.40});
+  const supportPart = (geo, mat, pos) => add(geo, mat, G.support, 'radsupport', pos);
+  for(const z of [-0.665,0.665]){
+    supportPart(roundedBox(0.12,0.62,0.105,0.014), supportMetal, [2.125,0.64,z]);
+    supportPart(roundedBox(0.18,0.09,0.18,0.008), supportMetal, [2.12,0.36,z]);
+    supportPart(roundedBox(0.17,0.065,0.17,0.008), supportMetal, [2.10,0.915,z]);
+    for(const y of [0.39,0.87])
+      supportPart(new THREE.CylinderGeometry(0.014,0.014,0.012,6).rotateZ(Math.PI/2), M.satin, [2.192,y,z]);
+    // Inward mounting tabs carry the radiator / condenser mounting points.
+    for(const y of [0.425,0.845])
+      supportPart(roundedBox(0.19,0.035,0.14,0.006), supportMetal, [2.065,y,z*0.87]);
+  }
+  // Radiator support brackets: angled black braces tying the upper corners of the support back to the fender aprons.
+  for(const sgn of [1, -1]){
+    const c = [[2.14,0.69],[2.09,0.76],[2.01,0.82],[1.90,0.85]], L = [], Rr = [], w = 0.028;
+    c.forEach(([x, z], i) => {
+      const a = c[Math.max(0, i-1)], b = c[Math.min(c.length-1, i+1)], t = V2(b[0]-a[0], b[1]-a[1]).normalize();
+      L.push(V2(x - t.y*w, sgn*(z + t.x*w))); Rr.push(V2(x + t.y*w, sgn*(z - t.x*w)));
+    });
+    const bs = new THREE.Shape([...L, ...Rr.reverse()]);
+    [[2.115,0.725],[1.93,0.843]].forEach(([x, z]) => { const h = new THREE.Path(); h.absarc(x, sgn*z, 0.01, 0, Math.PI*2, true); bs.holes.push(h); });
+    const bg = creased(extrude(bs, 0.012, 0.003, {seg:1, curve:8}), 50); bg.rotateX(Math.PI/2); bg.translate(0, 0.953, 0);
+    add(bg, supportMetal, G.support, 'radsupportbracket');
+    add(roundedBox(0.11, 0.17, 0.012, 0.005), supportMetal, G.support, 'radsupportbracket', [2.11, 0.87, sgn*0.724]);   // gusset down the side post
+    add(roundedBox(0.012, 0.09, 0.07, 0.004), supportMetal, G.support, 'radsupportbracket', [1.895, 0.91, sgn*0.85]);  // apron mounting flange
+    for(const y of [0.83, 0.905]) add(new THREE.CylinderGeometry(0.011,0.011,0.01,6).rotateX(Math.PI/2), supportMetal, G.support, 'radsupportbracket', [2.11, y, sgn*0.732]);
+  }
+  supportPart(roundedBox(0.14,0.075,1.43,0.012), supportMetal, [2.115,0.365,0]);
+  supportPart(roundedBox(0.17,0.070,1.43,0.012), supportMetal, [2.10,0.917,0]);
+  supportPart(roundedBox(0.018,0.020,1.23,0.005), supportMetal, [2.193,0.92,0]);
+  for(const z of [-0.48,-0.24,0.24,0.48])
+    supportPart(new THREE.CylinderGeometry(0.012,0.012,0.008,6), M.satin, [2.10,0.956,z]);
+  // Radiator support cover: black plastic panel over the top of the support, with a cut-out the hood latch/striker passes through.
+  {
+    const cv = new THREE.Shape(toV2([[2.00,-0.58],[2.015,-0.70],[2.04,-0.735],[2.07,-0.735],[2.07,-0.38],[2.10,-0.35],[2.205,-0.35],[2.205,0.35],[2.10,0.35],[2.07,0.38],[2.07,0.735],[2.04,0.735],[2.015,0.70],[2.00,0.58]]));   // plan: shape x = car x, shape y = car z
+    const path = (pts) => { const h = new THREE.Path(toV2(pts)); h.closePath(); cv.holes.push(h); };
+    const circ = (x, z, r) => { const h = new THREE.Path(); h.absarc(x, z, r, 0, Math.PI*2, true); cv.holes.push(h); };
+    path([[2.105,-0.075],[2.105,0.05],[2.125,0.05],[2.125,0.085],[2.19,0.085],[2.19,-0.045],[2.17,-0.045],[2.17,-0.075]]);   // latch cut-out
+    path([[2.135,0.13],[2.135,0.16],[2.165,0.16],[2.165,0.13]]);                                                              // square clip hole
+    circ(2.15, 0.255, 0.036);                                                                                                  // release-cable / sensor opening
+    for(const z of [-0.24,0.24]) circ(2.10, z, 0.009);
+    for(const z of [-0.48,0.48]) circ(2.035, z, 0.009);                                                             // over the support bolts
+    for(const z of [-0.66,0.66]) circ(2.035, z, 0.009);
+    const cg = creased(extrude(cv, 0.008, 0.002, {seg:1, curve:10}), 50); cg.rotateX(Math.PI/2); cg.translate(0, 0.958, 0);
+    const coverMat = std({color:col('#17191c'), roughness:0.85, metalness:0});
+    add(cg, coverMat, G.support, 'radcover');
+    add(roundedBox(0.012, 0.035, 0.70, 0.004), coverMat, G.support, 'radcover', [2.203, 0.943, 0]);   // front lip turned down
+    for(const z of [-0.36, 0.36]) add(roundedBox(0.045, 0.012, 0.36, 0.006), coverMat, G.support, 'radcover', [2.035, 0.966, z]);   // moulded stiffening ribs
+  }
+  // hood latch: black metal mechanism bolted to the support, popping up through the cover's cut-out like a switch
+  {
+    const lm = std({color:col('#121417'), metalness:0.6, roughness:0.45});
+    const L = (geo, pos, mat) => add(geo, mat || lm, G.support, 'latch', pos);
+    L(roundedBox(0.075, 0.008, 0.13, 0.003), [2.15, 0.952, 0]);                          // base plate
+    L(roundedBox(0.058, 0.022, 0.072, 0.007), [2.148, 0.962, 0]);                        // latch housing, proud of the cover
+    L(roundedBox(0.034, 0.004, 0.016, 0.002), [2.148, 0.9735, 0], M.liner);              // striker slot
+    const lever = roundedBox(0.05, 0.007, 0.016, 0.003); lever.rotateZ(0.28);            // release lever, tilted up like a switch
+    L(lever, [2.168, 0.968, 0.05]);
+    L(roundedBox(0.012, 0.012, 0.02, 0.004), [2.19, 0.972, 0.05]);                       // lever finger tab
+    for(const z of [-0.048, 0.048]) L(new THREE.CylinderGeometry(0.008, 0.008, 0.006, 6), [2.128, 0.959, z], M.satin);
+  }
+  // hood prop rod (left side as seen from the front): pivots on the radiator support, lies stowed along it, swings up to hold the open hood
+  {
+    const g = G.rod = new THREE.Group(); g.position.copy(ROD_PIVOT); car.add(g);
+    add(new THREE.CylinderGeometry(0.0075, 0.0075, ROD_LEN, 10).translate(0, ROD_LEN/2, 0), M.satin, g, 'hoodrod');
+    add(new THREE.SphereGeometry(0.016, 14, 10), M.gloss, g, 'hoodrod');                                   // pivot
+    add(new THREE.CylinderGeometry(0.012, 0.012, 0.03, 12).translate(0, ROD_LEN - 0.015, 0), M.gloss, g, 'hoodclip');  // rod-end clip
+    add(roundedBox(0.03, 0.02, 0.04, 0.006), M.gloss, car, null, [ROD_PIVOT.x, 0.93, ROD_PIVOT.z - ROD_LEN + 0.02]);   // stow clip
+  }
+  add(roundedBox(0.025, 0.012, 0.03, 0.004), M.yellow, car, 'latch', [2.18, 0.94, 0.05]);
+}
+
+await checkpoint(74, 'Adding wheels and trim…');
+/* ================= wheels & liners ================= */
+function makeWheel(){
+  const w = new THREE.Group();
+  const P = [[0.238,-0.100],[0.265,-0.108],[0.305,-0.114],[0.338,-0.112],[0.356,-0.104],[0.366,-0.092],[0.371,-0.075],[0.372,-0.04],[0.372,0],[0.372,0.04],[0.371,0.075],[0.366,0.092],[0.356,0.104],[0.338,0.112],[0.305,0.114],[0.265,0.108],[0.238,0.100]];
+  const tyre = new THREE.LatheGeometry(P.map(p => V2(p[0], p[1])), 80); tyre.rotateX(Math.PI/2);
+  add(tyre, M.rubber, w);
+  add(new THREE.CylinderGeometry(0.238, 0.238, 0.19, 56, 1, true).rotateX(Math.PI/2), M.alloyD, w);
+  add(new THREE.CircleGeometry(0.238, 48), M.liner, w, null, [0,0,-0.06]);
+  add(new THREE.CylinderGeometry(0.18, 0.18, 0.024, 56).rotateX(Math.PI/2), M.rotor, w);
+  add(new THREE.CylinderGeometry(0.09, 0.09, 0.05, 32).rotateX(Math.PI/2), M.rotor, w, null, [0,0,0.03]);
+  const cal = add(roundedBox(0.07, 0.16, 0.06, 0.02), M.caliper, w, null, [0.17*Math.cos(2.5), 0.17*Math.sin(2.5), 0.03]); cal.rotation.z = 2.5;
+  const sp = new THREE.Shape();
+  sp.moveTo(-0.018, 0.058); sp.lineTo(0.018, 0.058); sp.lineTo(0.012, 0.205); sp.quadraticCurveTo(0.026, 0.226, 0.03, 0.234);
+  sp.lineTo(-0.03, 0.234); sp.quadraticCurveTo(-0.026, 0.226, -0.012, 0.205);
+  const spG = creased(new THREE.ExtrudeGeometry(sp, {depth:0.022, bevelEnabled:true, bevelThickness:0.005, bevelSize:0.004, bevelOffset:-0.004, bevelSegments:2, curveSegments:6}), 45);
+  for(let i=0;i<5;i++) for(const o of [-0.13, 0.13]){
+    const piv = new THREE.Group(); piv.rotation.z = i*Math.PI*2/5 + o; w.add(piv);
+    const m = add(spG, [M.alloyF, M.alloyD], piv, null, [0, 0, 0.068]); m.rotation.x = -0.15;
+  }
+  add(new THREE.TorusGeometry(0.236, 0.011, 10, 80), M.alloyF, w, null, [0,0,0.092]);
+  add(new THREE.CylinderGeometry(0.066, 0.072, 0.04, 32).rotateX(Math.PI/2), M.alloyD, w, null, [0,0,0.086]);
+  const cap = new THREE.SphereGeometry(0.043, 24, 12, 0, Math.PI*2, 0, Math.PI/2); cap.rotateX(Math.PI/2); cap.scale(1,1,0.35);
+  add(cap, M.gloss, w, null, [0,0,0.106]);
+  for(let i=0;i<5;i++){ const a = i*Math.PI*2/5 + Math.PI/5; add(new THREE.CylinderGeometry(0.011, 0.011, 0.016, 6).rotateX(Math.PI/2), M.chrome, w, null, [0.053*Math.cos(a), 0.053*Math.sin(a), 0.108]); }
+  return w;
+}
+const wheelF = makeWheel(); wheelF.position.set(WF, R, TRACK); wheelF.name = 'wheelF'; side.add(wheelF);
+const wheelR = makeWheel(); wheelR.position.set(WR, R, TRACK); side.add(wheelR);
+add(new THREE.CylinderGeometry(AR - 0.004, AR - 0.004, 0.38, 40, 1, true, Math.PI/2 - 0.2, Math.PI + 0.36).rotateX(Math.PI/2), M.liner, side, 'fenderliner', [WF, R, 0.745]).castShadow = false;
+const xrayHide = [];
+xrayHide.push(add(new THREE.CylinderGeometry(AR - 0.004, AR - 0.004, 1.84, 40, 1, true, Math.PI/2 - 0.2, Math.PI + 0.36).rotateX(Math.PI/2), M.liner, car, null, [WR, R, 0]));
+xrayHide.push(add(new THREE.BoxGeometry(2.7, 0.02, 1.7), M.liner, car, null, [-0.52, 0.315, 0]));
+xrayHide.forEach(m => m.castShadow = false);
+
+/* quarter-panel highlight proxy (invisible until hovered/selected) */
+{
+  const s = new THREE.Shape();
+  s.moveTo(-1.30, 1.04); s.lineTo(-1.30, 0.905);
+  s.absarc(WR, R, 0.531, 1.4575, 2.52, false);
+  s.lineTo(-2.14, 0.64); s.lineTo(-2.14, 0.955); s.lineTo(-1.99, 0.955); s.lineTo(-1.99, 1.095); s.lineTo(-1.60, 1.10); s.lineTo(-1.36, 1.05);
+  const g = new THREE.ShapeGeometry(s, 16); g.translate(0, 0, HW + 0.004);
+  const q = add(sculpt(g, dBody, 0.04), M.hl, side, 'quarter'); q.visible = false; q.castShadow = false; q.userData.proxy = true;
+}
+
+/* mirror the right-hand side to the left */
+const sideL = side.clone(); sideL.scale.z = -1; car.add(sideL);
+sideL.traverse(o => {
+ if(o.userData.part === 'handleFR') o.userData.part = 'handleFL';
+ if(o.userData.part === 'handleRR') o.userData.part = 'handleRL';
+});
+const wheelFL = sideL.getObjectByName('wheelF');
+
+await checkpoint(84, 'Preparing the stage…');
+/* ================= stage: APT-branded turntable ================= */
+const BRAND = {navy:'#002250', red:'#E01F20'};
+const STAGE_R = 3.35, STAGE_H = 0.06;
+function mapleLeaf(g, x, y, s, rot, color){
+  const P = [[0,-1],[0.12,-0.72],[0.28,-0.8],[0.24,-0.42],[0.52,-0.62],[0.6,-0.5],[0.9,-0.56],[0.8,-0.3],[0.95,-0.22],[0.58,0.1],[0.66,0.28],[0.1,0.2],[0.08,0.62],[-0.08,0.62],[-0.1,0.2],[-0.66,0.28],[-0.58,0.1],[-0.95,-0.22],[-0.8,-0.3],[-0.9,-0.56],[-0.6,-0.5],[-0.52,-0.62],[-0.24,-0.42],[-0.28,-0.8],[-0.12,-0.72]];
+  g.save(); g.translate(x, y); g.rotate(rot); g.scale(s, s); g.beginPath();
+  P.forEach(([px,py], i) => i ? g.lineTo(px, py) : g.moveTo(px, py)); g.closePath(); g.fillStyle = color; g.fill(); g.restore();
+}
+const stageTex = canvasTex(2048, 2048, (g, W) => {
+  const C = W/2, S = W / (2*STAGE_R), F = '"Helvetica Neue",Arial,"Segoe UI",sans-serif';
+  // navy base with a soft centre lift
+  const rg = g.createRadialGradient(C, C, 0, C, C, C);
+  rg.addColorStop(0, '#0a3672'); rg.addColorStop(0.5, '#022a62'); rg.addColorStop(0.84, BRAND.navy); rg.addColorStop(1, '#00173a');
+  g.fillStyle = rg; g.fillRect(0, 0, W, W);
+
+  // technical grid, axes and dimension circles (inner field)
+  g.save(); g.beginPath(); g.arc(C, C, 0.848*C, 0, Math.PI*2); g.clip();
+  for(let m = -3.5; m <= 3.51; m += 0.25){
+    const p = C + m*S, major = Math.abs(m - Math.round(m)) < 0.01;
+    g.strokeStyle = major ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.045)'; g.lineWidth = major ? 2 : 1.2;
+    g.beginPath(); g.moveTo(p, 0); g.lineTo(p, W); g.moveTo(0, p); g.lineTo(W, p); g.stroke();
+  }
+  g.strokeStyle = 'rgba(255,255,255,0.22)'; g.lineWidth = 2.5;
+  g.beginPath(); g.moveTo(0, C); g.lineTo(W, C); g.moveTo(C, 0); g.lineTo(C, W); g.stroke();
+  g.setLineDash([22, 16]); g.strokeStyle = 'rgba(255,255,255,0.16)'; g.lineWidth = 2;
+  [1.35, 2.15].forEach(r => { g.beginPath(); g.arc(C, C, r*S, 0, Math.PI*2); g.stroke(); });
+  g.setLineDash([]);
+  // road: dashed lane lines running with the car + faint motion streaks off the tail
+  g.strokeStyle = 'rgba(255,255,255,0.34)'; g.lineWidth = 0.05*S; g.setLineDash([0.6*S, 0.45*S]);
+  [-1.3, 1.3].forEach(z => { g.beginPath(); g.moveTo(0, C + z*S); g.lineTo(W, C + z*S); g.stroke(); });
+  g.setLineDash([]);
+  [-0.75, -0.42, -0.12, 0.2, 0.5, 0.8].forEach((z, i) => {
+    const x0 = C - (2.45 + (i % 3)*0.08)*S, x1 = C - (3.3 - (i % 2)*0.2)*S;
+    const lg = g.createLinearGradient(x0, 0, x1, 0); lg.addColorStop(0, 'rgba(255,255,255,0.28)'); lg.addColorStop(1, 'rgba(255,255,255,0)');
+    g.strokeStyle = lg; g.lineWidth = 3; g.beginPath(); g.moveTo(x0, C + z*S); g.lineTo(x1, C + z*S); g.stroke();
+  });
+  // wordmark in front of the car (reads from the front) and Canadian line behind it (reads from the rear)
+  g.textAlign = 'left'; g.textBaseline = 'middle';
+  g.save(); g.translate(C + 2.71*S, C); g.rotate(-Math.PI/2);
+  g.font = `900 54px ${F}`; const w1 = g.measureText('APT ').width, w2 = g.measureText('AUTO PARTS').width, x0 = -(w1 + w2)/2;
+  g.lineJoin = 'round'; g.lineWidth = 5; g.strokeStyle = 'rgba(255,255,255,0.85)'; g.strokeText('APT AUTO PARTS', x0, 0);
+  g.fillStyle = BRAND.navy; g.fillText('APT AUTO PARTS', x0, 0);
+  g.fillStyle = BRAND.red; g.fillRect(x0, 34, w1 + w2, 4);
+  g.restore();
+  g.save(); g.translate(C - 2.70*S, C); g.rotate(Math.PI/2);
+  const t = 'QUALITY & SERVICE, EXCEEDING YOUR EXPECTATIONS.';
+  g.font = `800 34px ${F}`;
+  const sloganSize = Math.min(34, 640 / g.measureText(t).width * 34);
+  g.font = `800 ${sloganSize}px ${F}`; const tw = g.measureText(t).width;
+  mapleLeaf(g, -tw/2 - 30, 0, 20, 0, BRAND.red);
+  g.fillStyle = 'rgba(255,255,255,0.92)'; g.fillText(t, -tw/2, 1);
+  g.restore();
+  g.restore();
+
+  // outer dial band: ticks, red rim, ring text
+  const r0 = 0.855*C, r1 = 0.975*C;
+  g.beginPath(); g.arc(C, C, r1, 0, Math.PI*2); g.arc(C, C, r0, 0, Math.PI*2, true); g.fillStyle = '#001a40'; g.fill();
+  g.strokeStyle = 'rgba(255,255,255,0.55)'; g.lineWidth = 2.5; g.beginPath(); g.arc(C, C, r0, 0, Math.PI*2); g.stroke();
+  g.strokeStyle = BRAND.red; g.lineWidth = 12; g.beginPath(); g.arc(C, C, 0.99*C, 0, Math.PI*2); g.stroke();
+  for(let d = 0; d < 360; d += 2){
+    const a = d*Math.PI/180, long = d % 10 === 0, ri = r0 - (long ? 26 : 13);
+    g.strokeStyle = long ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.3)'; g.lineWidth = long ? 3 : 1.6;
+    g.beginPath(); g.moveTo(C + ri*Math.cos(a), C + ri*Math.sin(a)); g.lineTo(C + r0*Math.cos(a), C + r0*Math.sin(a)); g.stroke();
+  }
+  [45, 135, 225, 315].forEach(d => { const a = d*Math.PI/180; g.strokeStyle = BRAND.red; g.lineWidth = 7; g.beginPath(); g.arc(C, C, r0 - 40, a - 0.16, a + 0.16); g.stroke(); });
+  // ring text: letters face the centre so the near edge reads upright from the usual camera angle
+  const rt = (r0 + r1)/2, font = `800 50px ${F}`;
+  g.font = font; g.textAlign = 'center'; g.textBaseline = 'middle';
+  const seq = [];
+  for(let k=0;k<2;k++){ seq.push({s:'APT AUTO PARTS', c:'#ffffff'}, {dot:1}, {s:'QUALITY & SERVICE, EXCEEDING YOUR EXPECTATIONS.', c:'rgba(255,255,255,0.8)'}, {leaf:1}); }
+  const glyphs = [];
+  seq.forEach(t => {
+    if(t.dot) glyphs.push({w:70, dot:1}); else if(t.leaf) glyphs.push({w:80, leaf:1});
+    else [...t.s].forEach(ch => glyphs.push({ch, c:t.c, w:g.measureText(ch).width}));
+  });
+  const natural = glyphs.reduce((s, q) => s + q.w, 0), ls = (2*Math.PI*rt - natural) / glyphs.length;
+  let a = Math.PI/2 + 0.35;
+  glyphs.forEach(q => {
+    const w = q.w + ls, ac = a - (w/2)/rt, x = C + rt*Math.cos(ac), y = C + rt*Math.sin(ac);
+    if(q.dot){ g.fillStyle = BRAND.red; g.beginPath(); g.arc(x, y, 7, 0, Math.PI*2); g.fill(); }
+    else if(q.leaf) mapleLeaf(g, x, y, 21, ac - Math.PI/2, BRAND.red);
+    else { g.save(); g.translate(x, y); g.rotate(ac - Math.PI/2); g.fillStyle = q.c; g.fillText(q.ch, 0, 2); g.restore(); }
+    a -= w/rt;
+  });
+});
+stageTex.encoding = THREE.sRGBEncoding;
+const stageTop = new THREE.Mesh(new THREE.CircleGeometry(STAGE_R, 160).rotateX(-Math.PI/2), new THREE.MeshStandardMaterial({map:stageTex, roughness:0.4, metalness:0.12}));
+stageTop.receiveShadow = true; stageTop.position.y = 0.0005; scene.add(stageTop);
+const stageSide = new THREE.Mesh(new THREE.CylinderGeometry(STAGE_R, STAGE_R + 0.03, STAGE_H, 160, 1, true), phys({color:col('#001a3d'), metalness:0.4, roughness:0.28, clearcoat:1}));
+stageSide.position.y = -STAGE_H/2; stageSide.receiveShadow = true; scene.add(stageSide);
+const rimMat = std({color:col(BRAND.red), emissive:col(BRAND.red), emissiveIntensity:0.7});
+const stageRim = new THREE.Mesh(new THREE.TorusGeometry(STAGE_R + 0.004, 0.009, 8, 240), rimMat);
+stageRim.rotation.x = Math.PI/2; stageRim.position.y = -0.006; scene.add(stageRim);
+
+const floorMat = new THREE.MeshStandardMaterial({roughness:0.6, metalness:0.05, transparent:true, alphaMap:radialTex('rgba(255,255,255,1)', 'rgba(255,255,255,0)')});
+const floor = new THREE.Mesh(new THREE.CircleGeometry(8, 96).rotateX(-Math.PI/2), floorMat); floor.receiveShadow = true; floor.position.y = -STAGE_H; scene.add(floor);
+const flat = (w, d, tex, x, z, extra) => {
+  const g = new THREE.PlaneGeometry(w, d); g.rotateX(-Math.PI/2);
+  const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial(Object.assign({map:tex, transparent:true, depthWrite:false, toneMapped:false}, extra || {})));
+  m.position.set(x, 0.003, z); m.renderOrder = 1; scene.add(m); return m;
+};
+const shadowTex = radialTex('rgba(0,0,0,0.78)', 'rgba(0,0,0,0)');
+flat(5.5, 2.5, shadowTex, 0, 0);
+[[WF,TRACK],[WR,TRACK],[WF,-TRACK],[WR,-TRACK]].forEach(([x,z]) => flat(0.78, 0.44, shadowTex, x, z));
+const poolF = flat(4.2, 3.0, radialTex('rgba(255,244,220,0.9)', 'rgba(255,244,220,0)'), 4.3, 0, {blending:THREE.AdditiveBlending, opacity:0});
+const poolR = flat(1.8, 2.2, radialTex('rgba(255,30,30,0.8)', 'rgba(255,30,30,0)'), -3.0, 0, {blending:THREE.AdditiveBlending, opacity:0});
+/* ================= cabin interior + driver dummy =================
+   The cabin shell is solid, so the interior lives in its own scene and is drawn after the main
+   pass with depth cleared, masked by a stencil that only the window glass writes. */
+M.glass.stencilWrite = true; M.glass.stencilRef = 1; M.glass.stencilFunc = THREE.AlwaysStencilFunc; M.glass.stencilZPass = THREE.ReplaceStencilOp;
+const cabin = new THREE.Scene(); cabin.environment = scene.environment;
+cabin.add(new THREE.HemisphereLight(0xffffff, 0x404040, 0.55));
+{ const l = new THREE.DirectionalLight(0xffffff, 1.1); l.position.set(3, 6, 2); cabin.add(l); }
+const inMask = m => { m.stencilWrite = true; m.stencilRef = 3; m.stencilFuncMask = 1; m.stencilFunc = THREE.EqualStencilFunc; m.stencilFail = THREE.KeepStencilOp; m.stencilZFail = THREE.KeepStencilOp; m.stencilZPass = THREE.ReplaceStencilOp; return m; };
+const IM = {
+  seat: inMask(std({color:col('#2b2e34'), roughness:0.85})),
+  dash: inMask(std({color:col('#1a1c20'), roughness:0.7})),
+  dumY: inMask(std({color:col('#c9ced4'), roughness:0.5})),
+  dumK: inMask(std({color:col('#3c4046'), roughness:0.5})),
+};
+const cab = (geo, mat, pos, rz) => { const m = new THREE.Mesh(geo, mat); m.position.set(pos[0], pos[1], pos[2]); if(rz) m.rotation.z = rz; cabin.add(m); return m; };
+const limb = (a, b, r, mat) => {
+  const A = V3(a[0], a[1], a[2]), B = V3(b[0], b[1], b[2]), d = B.clone().sub(A);
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, d.length(), 14), mat);
+  m.position.copy(A).add(B).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(V3(0, 1, 0), d.normalize()); cabin.add(m);
+};
+const ball = (p, r, mat) => cab(new THREE.SphereGeometry(r, 20, 14), mat, p);
+// seats, rear bench, dashboard
+[-0.40, 0.40].forEach(z => {
+  cab(roundedBox(0.52, 0.12, 0.50, 0.04), IM.seat, [-0.30, 0.62, z]);
+  cab(roundedBox(0.12, 0.66, 0.50, 0.05), IM.seat, [-0.64, 0.98, z], 0.22);
+  cab(roundedBox(0.09, 0.18, 0.28, 0.04), IM.seat, [-0.76, 1.40, z], 0.22);
+});
+cab(roundedBox(0.50, 0.12, 1.40, 0.04), IM.seat, [-1.22, 0.62, 0]);
+cab(roundedBox(0.14, 0.60, 1.40, 0.05), IM.seat, [-1.48, 0.97, 0], 0.18);
+[-0.45, 0.45].forEach(z => cab(roundedBox(0.09, 0.16, 0.26, 0.04), IM.seat, [-1.58, 1.36, z], 0.18));
+cab(roundedBox(0.40, 0.22, 1.52, 0.06), IM.dash, [0.75, 1.02, 0]);
+// steering wheel + column (driver sits on the left, -z)
+{
+  const DZ = -0.40, WC = V3(0.22, 1.10, DZ), axis = V3(-0.9, 0.44, 0).normalize();
+  const w = cab(new THREE.TorusGeometry(0.16, 0.018, 12, 40), IM.dash, [WC.x, WC.y, WC.z]); w.quaternion.setFromUnitVectors(V3(0, 0, 1), axis);
+  const hub = cab(new THREE.CylinderGeometry(0.05, 0.05, 0.05, 18), IM.dash, [WC.x, WC.y, WC.z]); hub.quaternion.setFromUnitVectors(V3(0, 1, 0), axis);
+  limb([WC.x, WC.y, DZ], [0.58, 0.98, DZ], 0.03, IM.dash);
+  // crash-test dummy
+  ball([-0.54, 1.40, DZ], 0.10, IM.dumY);
+  // Friendly face on the forward-facing surface of the dummy's spherical head.
+  const facePoint = (z, y) => V3(-0.54 + Math.sqrt(0.10*0.10 - z*z - y*y) + 0.003, 1.40 + y, DZ + z);
+  for(const z of [-0.033, 0.033]){
+    const eye = facePoint(z, 0.028);
+    ball([eye.x, eye.y, eye.z], 0.010, IM.dumK);
+  }
+  const smilePoints = [];
+  for(let i = 0; i <= 32; i++){
+    const t = i/32, z = (t - 0.5)*0.125;
+    const y = -0.016 - 0.040*Math.sin(Math.PI*t);
+    smilePoints.push(facePoint(z,y));
+  }
+  cab(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(smilePoints),48,0.008,8,false),IM.dumK,[0,0,0]);
+
+  [1, -1].forEach(sd => { const t = cab(new THREE.CylinderGeometry(0.045, 0.045, 0.012, 22), IM.dumK, [-0.54, 1.40, DZ + sd*0.098]); t.rotation.x = Math.PI/2; });
+  limb([-0.56, 1.24, DZ], [-0.54, 1.33, DZ], 0.04, IM.dumK);
+  cab(roundedBox(0.22, 0.46, 0.38, 0.08), IM.dumY, [-0.50, 1.00, DZ], 0.22);
+  cab(roundedBox(0.26, 0.14, 0.36, 0.06), IM.dumK, [-0.40, 0.74, DZ]);
+  [1, -1].forEach(sd => {
+    const z = DZ + sd*0.21;
+    ball([-0.54, 1.20, z], 0.055, IM.dumK);
+    limb([-0.54, 1.20, z], [-0.24, 0.98, DZ + sd*0.23], 0.045, IM.dumY);
+    ball([-0.24, 0.98, DZ + sd*0.23], 0.045, IM.dumK);
+    limb([-0.24, 0.98, DZ + sd*0.23], [0.22, 1.12, DZ + sd*0.15], 0.04, IM.dumY);
+    ball([0.22, 1.12, DZ + sd*0.15], 0.045, IM.dumK);
+    limb([-0.36, 0.76, DZ + sd*0.10], [0.10, 0.82, DZ + sd*0.12], 0.06, IM.dumY);
+    ball([0.10, 0.82, DZ + sd*0.12], 0.062, IM.dumK);
+    limb([0.10, 0.82, DZ + sd*0.12], [0.30, 0.47, DZ + sd*0.12], 0.05, IM.dumY);
+    cab(roundedBox(0.20, 0.07, 0.10, 0.03), IM.dumK, [0.36, 0.44, DZ + sd*0.12]);
+  });
+}
+// anything solid drawn in front of the glass (wipers, mirrors, pillars) clears the mask again
+scene.traverse(o => { const m = o.material; if(!o.isMesh || !m || m === M.glass || m.transparent) return;
+  m.stencilWrite = true; m.stencilRef = 0; m.stencilFunc = THREE.AlwaysStencilFunc; m.stencilZPass = THREE.ReplaceStencilOp; });
+// darken whatever the interior pass drew, as if seen through tinted glass
+const tintScene = new THREE.Scene(), tintCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+{
+  const m = new THREE.MeshBasicMaterial({color:0x05070a, transparent:true, opacity:0.42, depthTest:false, depthWrite:false});
+  m.stencilWrite = true; m.stencilRef = 3; m.stencilFunc = THREE.EqualStencilFunc; m.stencilZPass = THREE.KeepStencilOp;
+  const q = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), m); q.frustumCulled = false; tintScene.add(q);
+}
+
+await checkpoint(92, 'Connecting part details…');
+/* ================= parts catalogue ================= */
+const CATS = ['Body & trim', 'Front end', 'Lighting', 'Rear end', 'Under the hood', 'Crash structure'];
+const MB = (x,y,z) => dBody(x,y,z), MC = (x,y,z) => dCab(x,y,z), NO = (x,y,z) => [x,y,z];
+const mirB = dCab(0.80, 1.19, GH);
+const PARTS = [
+  {id:'headerpanel', name:'Header Panel', cat:'Front end', g:'header', a:MB(2.285,0.845,0.60), n:[1,0.15,0], view:[1,0.55,0.3], d:3.2, act:'front', needs:{front:1}, show:() => S.front > 0.55,
+   desc:'Upper-front carrier behind the grille and headlamps that supports their mounting points. Separate from the radiator support in this illustrative model; design varies by vehicle.',
+   why:'Cracked or bent panel, damaged mounting tabs, or misaligned headlamp and grille mounts.'},
+  {id:'sensorFR', name:'Front Right Parking Sensor', cat:'Front end', g:'fb', a:MB(2.39,0.64,0.68), n:[1,0,0], d:2.6, act:'front',
+   desc:'Bumper-mounted ultrasonic sensor that helps detect nearby obstacles during parking. Fitment and position vary by vehicle.',
+   why:'Diagnosed sensor failure, impact damage, or a damaged sensor housing.'},
+  {id:'sensorFL', name:'Front Left Parking Sensor', cat:'Front end', g:'fb', a:MB(2.39,0.64,-0.68), n:[1,0,0], d:2.6, act:'front',
+   desc:'Bumper-mounted ultrasonic sensor that helps detect nearby obstacles during parking. Fitment and position vary by vehicle.',
+   why:'Diagnosed sensor failure, impact damage, or a damaged sensor housing.'},
+  {id:'sensorRR', name:'Rear Right Parking Sensor', cat:'Rear end', g:'rb', a:MB(-2.327,0.55,0.52), n:[-1,0,0], d:2.6, act:'rear',
+   desc:'Bumper-mounted ultrasonic sensor that helps detect nearby obstacles during parking. Fitment and position vary by vehicle.',
+   why:'Diagnosed sensor failure, impact damage, or a damaged sensor housing.'},
+  {id:'sensorRL', name:'Rear Left Parking Sensor', cat:'Rear end', g:'rb', a:MB(-2.327,0.55,-0.52), n:[-1,0,0], d:2.6, act:'rear',
+   desc:'Bumper-mounted ultrasonic sensor that helps detect nearby obstacles during parking. Fitment and position vary by vehicle.',
+   why:'Diagnosed sensor failure, impact damage, or a damaged sensor housing.'},
+  {id:'engineshield', name:'Engine Shield', cat:'Under the hood', g:'shield', a:NO(1.48,0.33,-0.18), n:[0.2,1,0], view:[1,1.2,-0.4], d:3.5, act:'under', needs:{under:1}, show:() => S.under > 0.55,
+   desc:'Under-engine splash shield that helps keep road splash and debris away from the engine bay.',
+   why:'Cracked, dragging, or missing fasteners.'},
+  {id:'valance', name:'Front Filler / Valance', cat:'Front end', g:'valance', a:NO(2.10,0.266,0.40), n:[0.5,1,0], view:[1,1.2,0.4], d:3.5, act:'under', needs:{under:1}, show:() => S.under > 0.55,
+   desc:'Lower front trim / filler panel beneath the bumper. Shown separately from the engine shield in this illustrative layout.',
+   why:'Cracked, scraped, loose, or broken mounting tabs.'},
+
+  {id:'accompressor', name:'A/C Compressor', cat:'Under the hood', g:'car', a:NO(1.81,0.967,0.18), n:[0.4,1,0], view:[1,1.4,0.35], d:2.7, act:'hood', needs:{hood:1}, show:() => S.hood > 0.7,
+   desc:'Compresses and circulates refrigerant through the air-conditioning system. Shown enlarged in front of the engine in this illustrative layout.',
+   why:'Diagnosed compressor failure, seizure, or refrigerant leakage.'},
+
+  {id:'washer', name:'Washer Fluid Reservoir', cat:'Under the hood', g:'car', a:NO(1.83,0.955,0.42), n:[0.1,1,0], view:[1,1.5,0], d:3.0, act:'hood', needs:{hood:1}, show:() => S.hood > 0.7, pinColor:'#218de0',
+   desc:'Stores washer fluid for cleaning the windshield. Shown blue at the front-left of this engine-bay view.', why:'Tank leaks, cracks, or the filler neck is damaged.'},
+  {id:'coolant', name:'Coolant Reservoir', cat:'Under the hood', g:'car', a:NO(1.45,0.965,0.42), n:[0.1,1,0], view:[1,1.5,0], d:3.0, act:'hood', needs:{hood:1}, show:() => S.hood > 0.7, pinColor:'#e75c94',
+   desc:'Holds the cooling system overflow fluid. Shown pink at the rear-left of this view. Check level only when the engine is cool.', why:'Tank cracks, leaks, or its cap is damaged.'},
+
+  {id:'uppergrille', name:'Upper Grille', cat:'Front end', g:'car', a:MB(2.345,0.883,0.20), n:[1,0.1,0], d:3.0,
+   desc:'Grille between the headlamps, above the bumper grille.', why:'Cracked slats or broken mounting tabs.'},
+  {id:'hoodhinge', name:'Hood Hinge', cat:'Under the hood', g:'car', sym:true, a:NO(1.11,1.00,0.53), n:[0.6,1,0.2], view:[1,1.1,0.3], d:2.5, act:'hood', needs:{hood:1}, show:() => S.hood > 0.7,
+   desc:'Pivoting bracket at the rear corner of the hood, beside the windshield. Guides the hood as it opens and closes.', why:'Bent, loose, seized, or damaged mounting points.'},
+  {id:'handleFR', name:'Front Right Door Handle', cat:'Body & trim', g:'car', a:MB(0.28,1,0.952), n:[0,0.15,1], d:2.8,
+   desc:'Exterior handle used to release this door latch.', why:'Broken, loose, or no longer releases the latch.'},
+  {id:'handleFL', name:'Front Left Door Handle', cat:'Body & trim', g:'car', a:MB(0.28,1,-0.952), n:[0,0.15,-1], d:2.8,
+   desc:'Exterior handle used to release this door latch.', why:'Broken, loose, or no longer releases the latch.'},
+  {id:'handleRR', name:'Rear Right Door Handle', cat:'Body & trim', g:'car', a:MB(-0.9,1.012,0.952), n:[0,0.15,1], d:2.8,
+   desc:'Exterior handle used to release this door latch.', why:'Broken, loose, or no longer releases the latch.'},
+  {id:'handleRL', name:'Rear Left Door Handle', cat:'Body & trim', g:'car', a:MB(-0.9,1.012,-0.952), n:[0,0.15,-1], d:2.8,
+   desc:'Exterior handle used to release this door latch.', why:'Broken, loose, or no longer releases the latch.'},
+
+  {id:'hood', name:'Hood', cat:'Body & trim', g:'hood', a:MB(1.70,1.04,0.30), n:[0.25,1,0.15], d:4.4, act:'hood',
+   desc:'Steel panel over the engine bay.',
+   why:'Dents, rust, or won’t latch.'},
+  {id:'deflector', name:'Air Deflector', cat:'Body & trim', g:'hood', a:MB(2.20,0.99,0.36), n:[1,0.7,0.15], d:3.2, act:'hood',
+   desc:'Acrylic shield on the hood’s front edge.',
+   why:'Cracked or faded.'},
+  {id:'grille', name:'Bumper Grille', cat:'Front end', g:'fb', a:MB(2.37,0.62,0.30), n:[1,0.05,0.12], d:3.4, act:'front',
+   desc:'Lower grille in the front bumper cover. Lets cooling air through and screens larger debris.',
+   why:'Broken slats or clips.'},
+  {id:'fbumper', name:'Front Bumper Cover', cat:'Front end', g:'fb', a:MB(2.36,0.70,0.62), n:[1,0.05,0.4], d:3.8, act:'front',
+   desc:'Painted outer skin of the bumper.',
+   why:'Cracks, torn tabs, deep scuffs.'},
+  {id:'fbracket', name:'Bumper Fender Bracket', cat:'Front end', g:'car', sym:true, a:MB(2.06,0.79,0.905), n:[0.5,0.3,1], d:3.2, act:'front', needs:{front:1}, show:() => S.front > 0.55,
+   desc:'Black side bracket on the front of the fender that holds the edge of the bumper cover flush with the fender.',
+   why:'Snapped tabs, cracked, or bumper cover edge sagging or gapping.'},
+  {id:'headlamp', name:'Headlamp Assembly', cat:'Lighting', g:'car', sym:true, a:MB(2.345,0.87,0.64), n:[1,0.15,0.45], d:2.8,
+   desc:'LED low and high beams with daytime running light.',
+   why:'Yellowed lens or moisture inside.'},
+  {id:'headlampmoulding', name:'Headlight Moulding', cat:'Lighting', g:'car', sym:true, a:MB(2.356,0.796,0.52), n:[1,-0.1,0.3], d:2.6,
+   desc:'Gloss-black trim strip along the lower edge of the headlight that fills the gap between the lamp and the bumper.',
+   why:'Cracked, faded, loose, or broken clips.'},
+  {id:'foglight', name:'Fog Light', cat:'Lighting', g:'fb', sym:true, a:MB(2.385,0.455,0.725), n:[1,0,0.45], d:2.6, act:'front',
+   desc:'Low, wide beam for fog and rain.',
+   why:'Cracked lens or dead LED.'},
+  {id:'fogcover', name:'Fog Lamp Cover', cat:'Front end', g:'fb', sym:true, a:MB(2.38,0.52,0.815), n:[1,0,0.6], d:2.6, act:'front',
+   desc:'Bezel around the fog light.',
+   why:'Snapped clips or missing.'},
+  {id:'fender', name:'Front Fender', cat:'Body & trim', g:'car', sym:true, a:MB(1.60,0.96,0.93), n:[0.15,0.2,1], d:3.6,
+   desc:'Bolt-on panel over the front wheel.',
+   why:'Dents or rust at the arch.'},
+  {id:'fendermoulding', name:'Fender Moulding', cat:'Body & trim', g:'car', sym:true, a:MB(1.80,0.54,1.0), n:[0.35,0.1,1], d:3.2,
+   desc:'Black plastic flare that trims the front wheel arch and protects the fender edge from stone chips.',
+   why:'Cracked, faded, scraped, or broken clips.'},
+  {id:'fenderliner', name:'Fender Liner', cat:'Body & trim', g:'car', sym:true, a:NO(1.10,0.72,0.88), n:[-0.2,0.3,1], view:[0.1,0.35,1], d:2.8,
+   desc:'Plastic inner splash shield inside the front wheel well that keeps water, salt, and debris out of the engine bay.',
+   why:'Torn, rubbing on the tire, sagging, or missing fasteners.'},
+  {id:'mirror', name:'Side Mirror', cat:'Body & trim', g:'car', sym:true, a:[mirB[0]-0.02, mirB[1]+0.12, mirB[2]+0.2], n:[0.25,0.5,1], d:2.4,
+   desc:'Power, heated, with turn signal.',
+   why:'Broken glass, motor, or signal.'},
+  {id:'moulding', name:'Lower Door Moulding', cat:'Body & trim', g:'car', sym:true, a:MB(0.0,0.45,0.962), n:[0,0.1,1], d:3.4,
+   desc:'Plastic trim that shields the lower doors.',
+   why:'Faded, cracked, or loose.'},
+  {id:'quarter', name:'Rear Quarter Panel', cat:'Body & trim', g:'car', sym:true, a:MB(-1.75,0.95,0.935), n:[-0.1,0.15,1], d:3.6,
+   desc:'Welded rear body panel.',
+   why:'Rear-corner damage or rust.'},
+  {id:'tailOuter', name:'Outer Tail Light', cat:'Lighting', g:'car', sym:true, a:MB(-2.215,1.03,0.90), n:[-0.75,0.1,0.65], d:2.8,
+   desc:'Stop, turn and side-marker lamp.',
+   why:'Cracked lens or dead LEDs.'},
+  {id:'tailInner', name:'Inner Tail Light', cat:'Lighting', g:'car', sym:true, a:MB(-2.25,1.035,0.52), n:[-1,0.05,0.15], d:2.8,
+   desc:'Liftgate lamp with reverse light.',
+   why:'Hazed lens or water inside.'},
+  {id:'rbumper', name:'Rear Bumper Cover', cat:'Rear end', g:'rb', a:MB(-2.302,0.50,0.40), n:[-1,0.05,0.2], d:3.6, act:'rear',
+   desc:'Painted rear skin with sensor mounts.',
+   why:'Scrapes, cracks, torn tabs.'},
+  {id:'rskid', name:'Rear Skid Plate', cat:'Rear end', g:'rb', a:MB(-2.288,0.345,-0.15), n:[-1,-0.2,0.05], d:3.0, act:'rear',
+   desc:'Lower trim that guards the bumper edge.',
+   why:'Scrapes or broken clips.'},
+  {id:'steppad', name:'Rear Bumper Step Pad', cat:'Rear end', g:'rb', a:MB(-2.27,0.66,0.35), n:[-0.6,1,0.1], view:[-1,0.75,0.35], d:3.2, act:'rear',
+   desc:'Textured anti-slip strip on top of the rear bumper that gives a firm foothold and protects the paint when loading cargo.',
+   why:'Worn smooth, cracked, peeling, or loose.'},
+  {id:'brakelight', name:'High-Mount Brake Light', cat:'Lighting', g:'car', a:MC(-2.066,1.602,0), n:[-1,0.45,0], d:2.6,
+   desc:'Third brake light at eye level.',
+   why:'Dead LEDs or cracked lens.'},
+  {id:'platelight', name:'License Plate Light', cat:'Lighting', g:'car', a:MB(-2.27,0.886,0.0), n:[-1,0.1,0], d:2.2,
+   desc:'Lights the rear plate at night.',
+   why:'Burned out or fogged.'},
+  {id:'latch', name:'Hood Latch', cat:'Under the hood', g:'support', a:NO(2.15,0.978,0), n:[0.35,1,0], view:[0.7,1,0.35], d:2.4, act:'hood', needs:{hood:1}, show:() => S.hood > 0.7,
+   desc:'Locks the hood shut.',
+   why:'Won’t close or release.'},
+  {id:'radcover', name:'Radiator Support Cover', cat:'Under the hood', g:'support', a:NO(2.06,0.975,-0.36), n:[0.3,1,0], view:[0.7,1,-0.3], d:2.8, act:'hood', needs:{hood:1}, show:() => S.hood > 0.7 || S.front > 0.55,
+   desc:'Black plastic cover over the top of the radiator support, with a cut-out the hood latch passes through. Tidies the front of the engine bay and guides air to the radiator.',
+   why:'Cracked, warped, missing clips, or broken mounting tabs.'},
+  {id:'radiator', name:'Radiator', cat:'Under the hood', g:'rad', a:NO(2.045,0.62,-0.30), n:[1,0.15,0], view:[0.55,0.75,-0.5], d:3.2, act:'front', needs:{front:1}, show:() => S.front > 0.55,
+   desc:'Cools the engine.',
+   why:'Leaks or overheating.'},
+  {id:'intercooler', name:'Intercooler', cat:'Under the hood', g:'ic', a:NO(2.175,0.52,0.22), n:[1,0.15,0], view:[0.9,0.35,0.55], d:3.2, act:'front', needs:{front:1}, show:() => S.front > 0.55,
+   desc:'Air-to-air cooler on turbocharged models, mounted low in front of the A/C condenser. Cools the compressed air from the turbo before it enters the engine.',
+   why:'Oil or boost leaks, bent or clogged fins, or cracked end tanks.'},
+  {id:'condenser', name:'A/C Condenser', cat:'Under the hood', g:'cond', a:NO(2.095,0.64,0.30), n:[1,0.15,0], view:[0.9,0.35,0.55], d:3.4, act:'front', needs:{front:1}, show:() => S.front > 0.55,
+   desc:'Releases heat from the A/C system.',
+   why:'Weak A/C or leaks.'},
+  {id:'frebar', name:'Front Reinforcement Bar', cat:'Crash structure', g:'frebar', a:MB(2.267,0.50,-0.35), n:[1,0.2,0], d:3.6, act:'front', needs:{front:1}, show:() => S.front > 0.55,
+   desc:'Steel crash beam behind the front bumper.',
+   why:'Any bend after an impact.'},
+  {id:'frebarbracket', name:'Reinforcement Bar Bracket', cat:'Crash structure', g:'frebar', sym:true, a:MB(2.20,0.50,0.83), n:[0.3,0.2,1], d:3.2, act:'front', needs:{front:1}, show:() => S.front > 0.55,
+   desc:'Black steel end bracket that mounts the front reinforcement bar to the frame rail.',
+   why:'Bent, cracked, or corroded after an impact.'},
+  {id:'radsupport', name:'Radiator Support', cat:'Crash structure', g:'support', a:NO(2.195,0.917,-0.28), n:[1,0.5,0], view:[0.9,0.4,-0.4], d:3.8, act:'front', needs:{front:1}, show:() => S.front > 0.55,
+   desc:'Black metal core-support frame behind the reinforcement bar. Locates and supports the radiator and A/C condenser assembly; the cooling fan mounts behind the radiator. The open centre allows cooling airflow.',
+   why:'Bent, cracked, corroded, or damaged mounting points.'},
+  {id:'radsupportbracket', name:'Radiator Support Bracket', cat:'Crash structure', g:'support', sym:true, a:NO(2.03,0.962,0.80), n:[0.3,1,0.5], d:3.4, act:'front', needs:{front:1}, show:() => S.front > 0.55,
+   desc:'Black angled brace that ties the upper corner of the radiator support back to the fender apron, keeping the front end square and rigid.',
+   why:'Bent, cracked, or corroded after an impact.'},
+  {id:'fabsorber', name:'Front Energy Absorber', cat:'Crash structure', g:'fabs', a:MB(2.352,0.55,0.40), n:[1,0.3,0], d:3.6, act:'front', needs:{front:1}, show:() => S.front > 0.55,
+   desc:'Foam that absorbs low-speed hits.',
+   why:'After any front bumper hit.'},
+  {id:'rrebar', name:'Rear Reinforcement Bar', cat:'Crash structure', g:'rrebar', a:MB(-2.227,0.52,-0.35), n:[-1,0.2,0], d:3.4, act:'rear', needs:{rear:1}, show:() => S.rear > 0.55,
+   desc:'Steel crash beam behind the rear bumper.',
+   why:'Bent after a rear hit.'},
+  {id:'rabsorber', name:'Rear Energy Absorber', cat:'Crash structure', g:'rabs', a:MB(-2.292,0.55,0.40), n:[-1,0.3,0], d:3.4, act:'rear', needs:{rear:1}, show:() => S.rear > 0.55,
+   desc:'Foam that absorbs rear bumps.',
+   why:'Crushed or split.'},
+  {id:'platebracket', name:'License Plate Bracket', cat:'Body & trim', g:'fb', a:MB(2.405,0.452,-0.13), n:[1,0.05,0], d:2.2,
+   a2:MB(-2.272,0.712,-0.13), g2:'car', n2:[-1,0.1,0],
+   desc:'Frame that holds the plate on front and rear.',
+   why:'Cracked, bent, or loose screws.'},
+  {id:'coolfan', name:'Cooling Fan', cat:'Under the hood', g:'fan', a:NO(1.99,0.80,0.40), n:[1,0.15,0], view:[0.6,0.7,-0.45], d:3.3, act:'front', needs:{front:1}, show:() => S.front > 0.55,
+   desc:'Plastic shroud and electric fan behind the radiator.',
+   why:'Noisy, not spinning, or cracked blades.'},
+  {id:'hoodclip', name:'Hood Clip', cat:'Under the hood', g:'rod', a:NO(0,ROD_LEN-0.008,0), n:[0.6,0.2,0.8], view:[0.75,0.8,0.6], d:2.4, act:'hood', needs:{hood:1}, show:() => S.hood > 0.85,
+   desc:'Clip / protective fitting at the end of the hood prop rod in this model.',
+   why:'Cracked, loose, worn, or missing.'},
+  {id:'hoodrod', name:'Hood Prop Rod', cat:'Under the hood', g:'rod', a:NO(0, ROD_LEN*0.62, 0), n:[0.6,0.2,0.8], view:[0.75,0.8,0.6], d:2.8, act:'hood', needs:{hood:1}, show:() => S.hood > 0.85,
+   desc:'Steel rod that holds the hood open.',
+   why:'Bent, loose clip, or worn rubber tip.'},
+];
+const PMAP = {}; PARTS.forEach((p, i) => { p.num = i + 1; PMAP[p.id] = p; p.meshes = []; });
+
+/* anchors live inside the moving groups so hotspots follow the hood / exploded layers */
+PARTS.forEach(p => {
+  const grp = G[p.g], base = grp === G.hood ? HINGE : V3(0,0,0);
+  const mk = (x,y,z) => { const o = new THREE.Object3D(); o.position.set(x - base.x, y - base.y, z - base.z); grp.add(o); return o; };
+  p.anc = [mk(p.a[0], p.a[1], p.a[2])];
+  p.nrm = [V3(...p.n).normalize()];
+  if(p.sym){ p.anc.push(mk(p.a[0], p.a[1], -p.a[2])); p.nrm.push(V3(p.n[0], p.n[1], -p.n[2]).normalize()); }
+  if(p.a2){ const o = new THREE.Object3D(); o.position.set(p.a2[0], p.a2[1], p.a2[2]); G[p.g2].add(o); p.anc.push(o); p.nrm.push(V3(...p.n2).normalize()); }
+});
+
+/* register meshes + highlight overlays */
+const pickables = [];
+car.traverse(o => {
+  if(!o.isMesh) return;
+  pickables.push(o);
+  const id = o.userData.part; if(!id || !PMAP[id]) return;
+  PMAP[id].meshes.push(o);
+  if(!o.userData.proxy){ const ov = new THREE.Mesh(o.geometry, M.hl); ov.visible = false; ov.raycast = () => {}; ov.renderOrder = 3; ov.userData.overlay = true; o.add(ov); o.userData.ov = ov; }
+});
+function setVis(id, mode){
+  const p = PMAP[id]; if(!p) return;
+  p.meshes.forEach(m => {
+    const t = m.userData.proxy ? m : m.userData.ov; if(!t) return;
+    t.visible = !!mode; t.material = mode === 'sel' ? M.hl : M.hover;
+  });
+}
+
+/* ================= state ================= */
+const S = {under:0, underT:0, hood:0, hoodT:0, front:0, frontT:0, rear:0, rearT:0, lights:0, lightsT:0, steer:0, steerT:0};
+let sel = null, hov = null, auto = false, xray = false, pinsOn = true, follow = false;
+const CENTER = V3(0, 0.72, 0);
+const target = CENTER.clone(), tTarget = CENTER.clone();
+const PHI_MIN = 0.08, PHI_MAX = 1.5;
+let fitR = 9, theta = -1.9, phi = 1.12, radius = 14, tTheta = -0.78, tPhi = 0.95, tRadius = 9;  // opens on the high front-left 'home' view
+const HOME = 2.0; // default camera distance, as a multiple of the fit distance
+const zoomMin = () => Math.max(1.4, fitR*0.24), zoomMax = () => fitR*2.6;
+
+/* ================= DOM ================= */
+const $ = s => document.querySelector(s);
+const panel = $('#panel'), card = $('#card'), drawer = $('#drawer'), tip = $('#tip'), pinsEl = $('#pins');
+
+PARTS.forEach(p => {
+  const b = document.createElement('button');
+  b.className = 'pin off'; if(p.pinColor) b.style.setProperty('--pin',p.pinColor); b.setAttribute('aria-label', `${p.num}. ${p.name}`);
+  b.innerHTML = `<span class="dot"></span><span class="lbl">${p.num} · ${p.name}</span>`;
+  b.addEventListener('click', e => { e.stopPropagation(); select(p.id); });
+  pinsEl.appendChild(b); p.el = b;
+});
+
+const list = $('#partList');
+CATS.forEach(c => {
+  const h = document.createElement('div'); h.className = 'grp'; h.textContent = c; list.appendChild(h);
+  PARTS.filter(p => p.cat === c).forEach(p => {
+    const r = document.createElement('button'); r.className = 'row-part'; r.dataset.id = p.id; r.dataset.cat = c;
+    r.innerHTML = `<span class="n">${p.num}</span><span>${p.name}</span>${p.needs ? '<small>inside</small>' : ''}`;
+    r.addEventListener('click', () => select(p.id));
+    list.appendChild(r); p.row = r;
+  });
+});
+$('#search').addEventListener('input', e => {
+  const q = e.target.value.trim().toLowerCase();
+  [...list.children].forEach(el => { if(el.classList.contains('row-part')) el.style.display = !q || PMAP[el.dataset.id].name.toLowerCase().includes(q) || el.dataset.cat.toLowerCase().includes(q) ? '' : 'none'; });
+  [...list.querySelectorAll('.grp')].forEach(g => { let n = g.nextElementSibling, any = false; while(n && !n.classList.contains('grp')){ if(n.style.display !== 'none') any = true; n = n.nextElementSibling; } g.style.display = any ? '' : 'none'; });
+});
+
+
+/* explore controls */
+const bHood = $('#tHood'), sFront = $('#sFront'), sRear = $('#sRear');
+const uUnder = $('#uUnder');
+const uFront = $('#uFront'), uRear = $('#uRear'), uHood = $('#uHood');
+const U_LABELS = {hood:['Pop the hood','Close the hood'], 'front bumper':['Look behind front bumper','Put front bumper back'], 'rear bumper':['Look behind rear bumper','Put rear bumper back']};
+const syncU = (b, on, what) => { b.setAttribute('aria-pressed', String(on)); b.textContent = U_LABELS[what][on ? 1 : 0]; };
+function setHood(on){ S.hoodT = on ? 1 : 0; bHood.setAttribute('aria-pressed', String(on)); bHood.textContent = on ? 'Close hood' : 'Open hood'; syncU(uHood, on, 'hood'); refreshCard(); }
+function setFront(v){ if(v > 0) setUnder(false); S.frontT = v; sFront.value = Math.round(v*100); syncU(uFront, v > 0.5, 'front bumper'); refreshCard(); }
+function setRear(v){ if(v > 0) setUnder(false); S.rearT = v; sRear.value = Math.round(v*100); syncU(uRear, v > 0.5, 'rear bumper'); refreshCard(); }
+function setUnder(on){
+ S.underT = on ? 1 : 0;
+ uUnder.setAttribute('aria-pressed',String(on));
+ uUnder.textContent = on ? 'Back to full view' : 'Peek under the engine';
+ if(on){ setFront(0); setRear(0); setHood(false); }
+ refreshCard();
+}
+uUnder.addEventListener('click',() => {
+ const on = S.underT < 0.5;
+ setView(on ? 'fx' : 'home',on ? 1.45 : undefined);
+ setUnder(on);
+});
+// unfolding swings the camera round to face that end of the car
+uFront.addEventListener('click', () => { const on = S.frontT < 0.5; if(on) setView('fx', 1.45); setFront(on ? 1 : 0); });
+uRear.addEventListener('click', () => { const on = S.rearT < 0.5; if(on) setView('rx', 1.45); setRear(on ? 1 : 0); });
+uHood.addEventListener('click', () => { const on = S.hoodT < 0.5; if(on) setView('home'); setHood(on); });
+bHood.addEventListener('click', () => setHood(S.hoodT < 0.5));
+sFront.addEventListener('input', () => { S.frontT = sFront.value / 100; refreshCard(); });
+sRear.addEventListener('input', () => { S.rearT = sRear.value / 100; refreshCard(); });
+function setXray(on){
+  xray = on; $('#tXray').setAttribute('aria-pressed', String(on)); xrayHide.forEach(m => m.visible = !on);
+  XRAY_MATS.forEach(m => {
+    if(on){ m.userData.o = {t:m.transparent, op:m.opacity, dw:m.depthWrite}; m.transparent = true; m.opacity = m === M.glass ? 0.12 : 0.16; m.depthWrite = false; }
+    else if(m.userData.o){ const o = m.userData.o; m.transparent = o.t; m.opacity = o.op; m.depthWrite = o.dw; }
+    m.needsUpdate = true;
+  });
+}
+$('#tXray').addEventListener('click', () => setXray(!xray));
+$('#tPins').addEventListener('click', e => { pinsOn = !pinsOn; e.currentTarget.setAttribute('aria-pressed', String(pinsOn)); });
+
+/* view controls */
+const VIEWS = { home:[-0.78,0.95], fx:[-0.86,1.2], rx:[-2.34,1.2], f34:[0.72,1.24], front:[0,1.42], left:[-Math.PI/2,1.42], right:[Math.PI/2,1.42], rear:[Math.PI,1.42], r34:[2.42,1.22], top:[Math.PI/2,PHI_MIN] };
+function setView(key, zoom){
+  deselect();
+  const [th, ph] = VIEWS[key];
+  tTheta = th + Math.PI*2*Math.round((tTheta - th) / (Math.PI*2)); tPhi = ph; tRadius = key === 'top' ? fitR*1.1 : fitR*(zoom || HOME);
+  tTarget.copy(CENTER); setAuto(false);
+}
+document.querySelectorAll('#views [data-view]').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
+const bAuto = $('#tAuto');
+function setAuto(on){ auto = on; bAuto.setAttribute('aria-pressed', String(on)); }
+bAuto.addEventListener('click', () => setAuto(!auto));
+
+/* style controls */
+const sw = $('#swatches');
+PAINTS.forEach((p, i) => {
+  const b = document.createElement('button');
+  b.style.background = p.hex; b.title = p.name; b.setAttribute('aria-label', p.name); b.setAttribute('aria-pressed', String(p === PAINT0));
+  b.addEventListener('click', () => {
+    M.paint.color.copy(col(p.hex)); M.paint.metalness = p.metal; M.paint.roughness = p.rough;
+    [...sw.children].forEach(c => c.setAttribute('aria-pressed', String(c === b))); $('#paintName').textContent = p.name;
+  });
+  sw.appendChild(b);
+});
+$('#paintName').textContent = PAINT0.name;
+const toggle = (id, fn) => { const b = $(id); b.addEventListener('click', () => { const on = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', String(on)); fn(on); }); };
+toggle('#tRoof', on => roofParts.forEach(m => m.material = on ? M.roofBlk : M.paint));
+toggle('#tLights', on => { S.lightsT = on ? 1 : 0; document.body.classList.toggle('night', on); });
+toggle('#tSteer', on => { S.steerT = on ? 0.45 : 0; });
+
+/* ================= selection + card ================= */
+function actionFor(p){
+  if(p.act === 'under') return {label:S.underT > 0.5 ? 'Back to full view' : 'Peek under the engine',fn:() => setUnder(S.underT < 0.5)};
+  if(p.act === 'hood') return {label: S.hoodT > 0.5 ? 'Close hood' : 'Open hood', fn: () => setHood(S.hoodT < 0.5)};
+  if(p.act === 'front') return {label: S.frontT > 0.5 ? 'Reassemble front end' : 'Pull out front layers', fn: () => setFront(S.frontT > 0.5 ? 0 : 1)};
+  if(p.act === 'rear') return {label: S.rearT > 0.5 ? 'Reassemble rear end' : 'Pull out rear layers', fn: () => setRear(S.rearT > 0.5 ? 0 : 1)};
+  return null;
+}
+function refreshCard(){
+  const box = $('#cardActions'); box.innerHTML = '';
+  if(!sel) return;
+  const p = PMAP[sel], a = actionFor(p);
+  if(a){ const b = document.createElement('button'); b.className = 'btn primary'; b.textContent = a.label; b.addEventListener('click', a.fn); box.appendChild(b); }
+  const x = document.createElement('button'); x.className = 'btn'; x.textContent = xray ? 'Exit X-ray' : 'X-ray view'; x.addEventListener('click', () => { setXray(!xray); refreshCard(); }); box.appendChild(x);
+}
+function fillCard(p){
+  $('#cardCat').textContent = p.cat; $('#cardNum').textContent = p.num; $('#cardTitle').textContent = p.name;
+  $('#cardDesc').textContent = p.desc; $('#cardWhy').textContent = p.why;
+  $('#cardIdx').textContent = `${p.num} of ${PARTS.length}`;
+  refreshCard();
+}
+function closeCard(){ card.classList.remove('on'); }
+function bestAnchor(p){
+  const cam = camera.position; let best = 0, bs = -9;
+  p.anc.forEach((o, i) => { const w = o.getWorldPosition(new THREE.Vector3()); const n = p.nrm[i].clone().applyQuaternion(o.parent.getWorldQuaternion(new THREE.Quaternion())); const s = n.dot(cam.clone().sub(w).normalize()); if(s > bs){ bs = s; best = i; } });
+  return best;
+}
+function focusPart(p){
+  const i = bestAnchor(p), o = p.anc[i];
+  const n = p.view ? V3(p.view[0], p.view[1], p.view[2] * (p.anc.length > 1 && i === 1 ? -1 : 1)).normalize() : p.nrm[i].clone();
+  if(p.g === 'hood' && S.hoodT > 0.5) n.set(0.6, 0.8, n.z);
+  const dir = V3(n.x, n.y*0.6 + 0.24, n.z);
+  if(Math.abs(n.z) < 0.5) dir.z += 0.38 * (camera.position.z >= 0 ? 1 : -1);
+  dir.normalize();
+  const th = Math.atan2(dir.z, dir.x);
+  tTheta = th + Math.PI*2*Math.round((theta - th) / (Math.PI*2));
+  tPhi = clamp(Math.acos(clamp(dir.y, -1, 1)), 0.35, PHI_MAX);
+  tRadius = clamp(p.d * Math.max(1, fitR / 8.3), zoomMin(), zoomMax());
+  follow = i;
+}
+function select(id){
+  const p = PMAP[id]; if(!p) return;
+  if(sel && sel !== id){ setVis(sel, null); PMAP[sel].el.classList.remove('sel'); PMAP[sel].row.classList.remove('sel'); }
+  sel = id; setVis(id, 'sel'); p.el.classList.add('sel'); p.row.classList.add('sel');
+  p.row.scrollIntoView({block:'nearest'});
+  if(p.needs){ if(p.needs.under) setUnder(true); if(p.needs.hood) setHood(true); if(p.needs.front) setFront(1); if(p.needs.rear) setRear(1); }
+  setAuto(false); focusPart(p); fillCard(p); card.classList.add('on');
+}
+function deselect(){
+  if(!sel) return;
+  const p = PMAP[sel]; setVis(sel, null); p.el.classList.remove('sel'); p.row.classList.remove('sel');
+  sel = null; follow = false; tTarget.copy(CENTER); tRadius = Math.max(tRadius, fitR*HOME); closeCard();
+}
+$('#cardClose').addEventListener('click', deselect);
+const step = d => { const i = sel ? PMAP[sel].num - 1 : -1; select(PARTS[(i + d + PARTS.length) % PARTS.length].id); };
+$('#prevPart').addEventListener('click', () => step(-1));
+$('#nextPart').addEventListener('click', () => step(1));
+
+/* ================= picking + orbit controls ================= */
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+const SHELL = new Set(XRAY_MATS);
+function pickAt(cx, cy){
+  ndc.set(cx / innerWidth * 2 - 1, -(cy / innerHeight) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const hits = ray.intersectObjects(pickables, false);
+  let fallback = null;
+  for(const h of hits){
+    const o = h.object;
+    if(o.userData.overlay) continue;
+    const id = o.userData.part || null;
+    if(xray && SHELL.has(o.material)){ if(fallback === null) fallback = id; continue; }
+    return id;
+  }
+  return fallback;
+}
+const mobileUI = () => matchMedia('(max-width:680px), (max-width:1000px) and (pointer:coarse), (orientation:landscape) and (max-height:600px) and (pointer:coarse)').matches;
+const landscapeUI = () => mobileUI() && innerWidth > innerHeight;
+const pointers = new Map(); let pinch = 0, down = null, lastHover = 0, gestureMoved = false;
+canvas.addEventListener('pointerdown', e => {
+  canvas.setPointerCapture(e.pointerId); pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  if(pointers.size === 1){ gestureMoved = false; down = {x:e.clientX, y:e.clientY, t:performance.now()}; } else gestureMoved = true; canvas.classList.add('drag');
+  if(pointers.size === 2) pinch = pinchDist();
+});
+const pinchDist = () => { const [a, b] = [...pointers.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
+canvas.addEventListener('pointermove', e => {
+  const p = pointers.get(e.pointerId);
+  if(!p){
+    const now = performance.now(); if(now - lastHover < 70 || e.pointerType !== 'mouse') return; lastHover = now;
+    const id = pickAt(e.clientX, e.clientY);
+    if(id !== hov){ if(hov && hov !== sel) setVis(hov, null); hov = id; if(hov && hov !== sel) setVis(hov, 'hover'); }
+    canvas.classList.toggle('hot', !!id);
+    tip.classList.toggle('on', !!id); if(id){ tip.textContent = PMAP[id].name; tip.style.left = (e.clientX + 14) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; }
+    return;
+  }
+  const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
+  if(Math.abs(e.clientX - down.x) + Math.abs(e.clientY - down.y) > 5){ gestureMoved = true; setAuto(false); }
+  if(pointers.size === 1){ tTheta += dx * 0.0085; tPhi = clamp(tPhi - dy * 0.0065, PHI_MIN, PHI_MAX); }
+  else if(pointers.size === 2){ const d = pinchDist(); if(pinch) tRadius = clamp(tRadius * pinch / d, zoomMin(), zoomMax()); pinch = d; }
+});
+const endPtr = e => {
+  const had = pointers.has(e.pointerId); pointers.delete(e.pointerId); pinch = 0;
+  if(!pointers.size) canvas.classList.remove('drag');
+  if(had && down && !gestureMoved && e.type === 'pointerup' && Math.abs(e.clientX - down.x) + Math.abs(e.clientY - down.y) < 6 && performance.now() - down.t < 600){
+    const id = pickAt(e.clientX, e.clientY);
+    if(id) select(id); else deselect();
+  }
+};
+canvas.addEventListener('pointerup', endPtr); canvas.addEventListener('pointercancel', endPtr);
+canvas.addEventListener('pointerleave', () => { tip.classList.remove('on'); if(hov && hov !== sel) setVis(hov, null); hov = null; });
+canvas.addEventListener('wheel', e => { e.preventDefault(); tRadius = clamp(tRadius * Math.exp(e.deltaY * 0.0012), zoomMin(), zoomMax()); }, {passive:false});
+canvas.addEventListener('dblclick', () => setView('home'));
+window.addEventListener('keydown', e => {
+  if(e.target.tagName === 'INPUT') return;
+  const k = e.key; let used = true;
+  if(k === 'Escape') deselect();
+  else if(k === 'ArrowLeft') tTheta -= 0.25; else if(k === 'ArrowRight') tTheta += 0.25;
+  else if(k === 'ArrowUp') tPhi = clamp(tPhi - 0.12, PHI_MIN, PHI_MAX); else if(k === 'ArrowDown') tPhi = clamp(tPhi + 0.12, PHI_MIN, PHI_MAX);
+  else if(k === '+' || k === '=') tRadius = clamp(tRadius * 0.9, zoomMin(), zoomMax()); else if(k === '-') tRadius = clamp(tRadius * 1.1, zoomMin(), zoomMax());
+  else used = false;
+  if(used && k !== 'Escape'){ e.preventDefault(); setAuto(false); }
+});
+
+/* ================= theme + resize ================= */
+const floorDay = new THREE.Color(), floorNight = col('#12151a');
+const mq = window.matchMedia('(prefers-color-scheme: dark)');
+function applyTheme(){ const dark = !mobileUI() && (mq.matches || document.documentElement.dataset.theme === 'dark'); floorDay.copy(col(mobileUI() ? '#ffffff' : dark ? '#20242b' : '#e3e7ec')); }
+applyTheme(); mq.addEventListener && mq.addEventListener('change', applyTheme);
+let baseShift = 0, curShift = -1, cardShift = 0, sideX = 0, lastHorizontal = null;
+function applyShift(force){
+  const want = baseShift + cardShift;
+  const horizontal = mobileUI() ? (landscapeUI() && card.classList.contains('on') ? (card.offsetWidth + 24) / 2 : 0) : sideX;
+  const next = force || curShift < 0 ? want : curShift + (want - curShift) * 0.15;
+  if(force || horizontal !== lastHorizontal || Math.abs(next - curShift) > 0.5){ lastHorizontal = horizontal; curShift = next; camera.setViewOffset(innerWidth, innerHeight, horizontal, curShift, innerWidth, innerHeight); camera.updateProjectionMatrix(); }
+}
+function resize(){
+  applyTheme();
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h; camera.fov = camera.aspect < 0.8 ? 40 : 28;
+  const vt = Math.tan(camera.fov * Math.PI / 360);
+  const nf = Math.max(2.5 / (vt * camera.aspect), 1.45 / vt) + 1.8;
+  tRadius *= nf / fitR; radius *= nf / fitR; fitR = nf;
+  const ph = panel.offsetHeight; document.documentElement.style.setProperty('--panelH', ph + 'px');
+  baseShift = Math.max(0, (ph + 16 - 70) / 2);
+  // centre the scene in the space to the right of the parts sidebar
+  sideX = !mobileUI() ? -Math.round(drawer.getBoundingClientRect().right / 2) : 0;
+  applyShift(true);
+}
+window.addEventListener('resize', resize); resize();
+radius = fitR * HOME * 1.6; tRadius = fitR * HOME;
+
+/* ================= loop ================= */
+const ease = t => t <= 0 ? 0 : t >= 1 ? 1 : t*t*(3 - 2*t);
+const seg = (v, a, b) => ease((v - a) / (b - a));
+const clock = new THREE.Clock(), tmpV = new THREE.Vector3(), tmpQ = new THREE.Quaternion();
+let first = true, elapsed = 0, frameK = 1, frameX = 0;
+// Line-of-sight for hotspots, done on the GPU: a few times a second (only while something is changing) the scene is
+// drawn once into a small depth snapshot; each hotspot then just compares its own depth with the depth at its pixel.
+// Glass, smoked plastic, x-ray shells and highlight overlays are left out so they never hide a dot.
+const SIGHT_SCALE = 4, SIGHT_EVERY = 0.12;                     // snapshot at 1/4 resolution, at most ~8x per second
+const sightRT = new THREE.WebGLRenderTarget(1, 1, {minFilter:THREE.NearestFilter, magFilter:THREE.NearestFilter, depthBuffer:true});
+const sightMat = new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking, side:THREE.DoubleSide});
+const sightVP = new THREE.Matrix4(), sightLastCam = new THREE.Matrix4(), sightSize = new THREE.Vector2(), sightClear = new THREE.Color();
+const sightV = new THREE.Vector3();
+let sightBuf = null, sightW = 0, sightH = 0, sightAt = -1, sightState = '', sightReady = false;
+const seeThrough = m => !m || Array.isArray(m) || (m.transparent && m.opacity < 0.9) || m.isShadowMaterial || (xray && SHELL.has(m));
+function takeSightSnapshot(){
+  renderer.getDrawingBufferSize(sightSize);
+  const w = Math.max(1, Math.round(sightSize.x / SIGHT_SCALE)), h = Math.max(1, Math.round(sightSize.y / SIGHT_SCALE));
+  if(w !== sightW || h !== sightH){ sightRT.setSize(w, h); sightBuf = new Uint8Array(w * h * 4); sightW = w; sightH = h; }
+  const hidden = [];
+  scene.traverse(o => { if(o.visible && (o.isMesh || o.isLine || o.isPoints || o.isSprite) && (o.userData.overlay || seeThrough(o.material))){ o.visible = false; hidden.push(o); } });
+  const bg = scene.background, autoShadow = renderer.shadowMap.autoUpdate, clearA = renderer.getClearAlpha(); renderer.getClearColor(sightClear);
+  scene.background = null; scene.overrideMaterial = sightMat; renderer.shadowMap.autoUpdate = false;
+  renderer.setRenderTarget(sightRT); renderer.setClearColor(0xffffff, 1); renderer.clear();
+  renderer.render(scene, camera);
+  renderer.readRenderTargetPixels(sightRT, 0, 0, w, h, sightBuf);
+  renderer.setRenderTarget(null); renderer.setClearColor(sightClear, clearA);
+  scene.overrideMaterial = null; scene.background = bg; renderer.shadowMap.autoUpdate = autoShadow;
+  for(const o of hidden) o.visible = true;
+  sightVP.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+  sightReady = true;
+}
+const depthAt = (x, y) => {                                      // packed [0,1] depth -> distance from the camera (metres)
+  const i = (Math.min(sightH - 1, Math.max(0, y)) * sightW + Math.min(sightW - 1, Math.max(0, x))) * 4;
+  const d = (sightBuf[i]/16777216 + sightBuf[i+1]/65536 + sightBuf[i+2]/256 + sightBuf[i+3]) / 256;
+  return d >= 0.9999 ? Infinity : camera.near * camera.far / (camera.far - d * (camera.far - camera.near));
+};
+function sightBlocked(world){
+  if(!sightReady) return false;
+  sightV.copy(world).applyMatrix4(sightVP);
+  if(sightV.z > 1 || Math.abs(sightV.x) > 1 || Math.abs(sightV.y) > 1) return false;
+  const dz = sightV.z * 0.5 + 0.5, dist = camera.near * camera.far / (camera.far - dz * (camera.far - camera.near));
+  const px = Math.floor((sightV.x + 1) / 2 * sightW), py = Math.floor((sightV.y + 1) / 2 * sightH);
+  // farthest of the pixel and its 4 neighbours, so dots on a part's silhouette don't flicker
+  const hit = Math.max(depthAt(px, py), depthAt(px+1, py), depthAt(px-1, py), depthAt(px, py+1), depthAt(px, py-1));
+  return hit < dist - (0.04 + 0.01 * dist);
+}
+function refreshSight(){
+  // only re-snapshot when the view or the car has actually changed, and never more often than SIGHT_EVERY
+  const st = [S.hood, S.front, S.rear, S.under, S.steer].map(v => v.toFixed(3)).join() + (xray ? 'x' : '');
+  const changed = !sightReady || st !== sightState || !camera.matrixWorld.equals(sightLastCam);
+  if(changed && elapsed - sightAt >= SIGHT_EVERY){ takeSightSnapshot(); sightAt = elapsed; sightState = st; sightLastCam.copy(camera.matrixWorld); }
+}
+// on desktop the card floats beside the selected hotspot and follows it as the camera moves
+let cardX = null, cardY = null;
+function placeCard(){
+  if(!card.classList.contains('on') || sel === null || mobileUI() || PMAP[sel].sx == null){
+    if(cardX !== null){ cardX = cardY = null; card.style.left = card.style.top = card.style.right = ''; }
+    return;
+  }
+  const p = PMAP[sel], w = innerWidth, cw = card.offsetWidth, ch = card.offsetHeight;
+  const lbl = p.el.querySelector('.lbl'), gap = (lbl ? lbl.offsetWidth : 0) + 34;
+  const minX = drawer.getBoundingClientRect().right + 16, maxX = w - cw - 16;
+  const minY = 18, maxY = (panel.offsetHeight ? panel.getBoundingClientRect().top : innerHeight) - ch - 16;
+  let x = p.sx + gap; if(x > maxX) x = p.sx - 28 - cw;
+  x = clamp(x, minX, Math.max(minX, maxX));
+  const y = clamp(p.sy - ch * 0.4, minY, Math.max(minY, maxY));
+  if(cardX === null){ cardX = x; cardY = y; } else { cardX += (x - cardX) * 0.25; cardY += (y - cardY) * 0.25; }
+  card.style.right = 'auto'; card.style.left = cardX.toFixed(1) + 'px'; card.style.top = cardY.toFixed(1) + 'px';
+}
+function updatePins(){
+  const w = innerWidth, h = innerHeight, cam = camera.position;
+  if(pinsOn) refreshSight();
+  for(const p of PARTS){
+    const el = p.el;
+    if(!pinsOn || (p.show && !p.show())){ el.classList.add('off'); continue; }
+    let best = -9, bx = 0, by = 0;
+    p.anc.forEach((o, i) => {
+      o.getWorldPosition(tmpV); o.parent.getWorldQuaternion(tmpQ);
+      const n = p.nrm[i].clone().applyQuaternion(tmpQ);
+      const face = n.dot(cam.clone().sub(tmpV).normalize());
+      if(face > best && !sightBlocked(tmpV)){ const s = tmpV.clone().project(camera); if(s.z < 1){ best = face; bx = (s.x + 1) / 2 * w; by = (1 - s.y) / 2 * h; } }
+    });
+    if(best < 0.08 && p.id !== sel){ el.classList.add('off'); continue; }
+    if(best > -9){ p.sx = bx; p.sy = by; }
+    el.classList.remove('off');
+    el.style.transform = `translate(${bx.toFixed(1)}px,${by.toFixed(1)}px)`;
+  }
+}
+function tick(){
+  const dt = Math.min(clock.getDelta(), 0.05); elapsed += dt;
+  const k = 1 - Math.pow(0.0015, dt), k2 = 1 - Math.pow(0.02, dt);
+  if(auto) tTheta += dt * 0.25;
+  for(const key of ['hood','front','rear','under','lights','steer']) S[key] += (S[key+'T'] - S[key]) * k2;
+
+  G.hood.rotation.z = ease(S.hood) * HOOD_OPEN;
+  G.rod.quaternion.setFromUnitVectors(Y_AXIS, ROD_STOW.clone().lerp(ROD_UP, sstep(0.55, 0.95, ease(S.hood))).normalize());
+  // exploded layers step up like stairs toward the car, so each one shows above the one in front of it
+  const fly = (g, t, x, y) => { g.position.x = t * x; g.position.y = t * y; };
+  fly(G.fb,     seg(S.front, 0,    0.55),  2.80, 0);
+  fly(G.fabs,   seg(S.front, 0.12, 0.67),  2.25, 0.16);
+  fly(G.frebar, seg(S.front, 0.24, 0.79),  2.00, 0.32);
+  fly(G.header, seg(S.front, 0.27, 0.82),  1.90, 0.90);
+  fly(G.support,seg(S.front, 0.30, 0.85),  1.65, 0.48);
+  fly(G.ic,     seg(S.front, 0.33, 0.88),  1.48, 0.56);
+  fly(G.cond,   seg(S.front, 0.36, 0.91),  1.30, 0.64);
+  fly(G.rad,    seg(S.front, 0.45, 1),     1.05, 0.80);
+  fly(G.fan,    seg(S.front, 0.52, 1),     0.80, 0.96);
+  // Slide both pieces out from under the nose, staggered vertically for clear selection.
+  fly(G.shield,ease(S.under),1.65,0.28); G.shield.position.z = -0.38*ease(S.under);
+  fly(G.valance,seg(S.under,0.12,1),2.05,0.55); G.valance.position.z = 0.20*ease(S.under);
+  fly(G.rb,     seg(S.rear,  0,    0.6),  -1.95, 0);
+  fly(G.rabs,   seg(S.rear,  0.15, 0.75), -1.32, 0.24);
+  fly(G.rrebar, seg(S.rear,  0.3,  0.9),  -0.78, 0.48);
+  wheelF.rotation.y = S.steer; wheelFL.rotation.y = -S.steer;
+
+  const L = S.lights;
+  M.lens.emissiveIntensity = L * 4; M.fog.emissiveIntensity = 0.15 + L * 2.5;
+  M.tail.emissiveIntensity = 0.45 + L * 1.6; M.tailLed.emissiveIntensity = 1.6 + L * 2.4; M.plateLt.emissiveIntensity = 0.3 + L * 2;
+  poolF.material.opacity = L * 0.55; poolR.material.opacity = L * 0.5;
+  renderer.toneMappingExposure = 1.0 - L * 0.35;
+  floorMat.color.copy(floorDay).lerp(floorNight, L);
+  rimMat.emissiveIntensity = 0.7 + L * 2.6;
+  M.hl.opacity = 0.26 + 0.14 * Math.sin(elapsed * 4);
+
+  if(sel !== null && follow !== false){ PMAP[sel].anc[follow].getWorldPosition(tmpV); tTarget.copy(CENTER).lerp(tmpV, 0.82); }
+  target.lerp(tTarget, k);
+  theta += (tTheta - theta) * k; phi += (tPhi - phi) * k; radius += (tRadius - radius) * k;
+  // pull back and re-centre while layers are exploded (only when no part is focused)
+  const free = sel === null;
+  frameK += ((free ? 1 + 0.16*Math.max(1.3*ease(S.front), ease(S.rear)) + 0.02*ease(S.hood) + 0.22*ease(S.under) : 1) - frameK) * k;
+  frameX += ((free ? 1.8*ease(S.front) - 1.0*ease(S.rear) + 1.65*ease(S.under) : 0) - frameX) * k;
+  const r = radius * frameK, tx = target.x + frameX;
+  camera.position.set(tx + r*Math.sin(phi)*Math.cos(theta), target.y + r*Math.cos(phi), target.z + r*Math.sin(phi)*Math.sin(theta));
+  camera.lookAt(tx, target.y, target.z);
+  cardShift = card.classList.contains('on') && mobileUI() && !landscapeUI() ? card.offsetHeight * 0.5 : 0; applyShift(false);
+  renderer.render(scene, camera);
+  renderer.autoClear = false; renderer.clearDepth(); renderer.render(cabin, camera); renderer.render(tintScene, tintCam); renderer.autoClear = true;
+  updatePins(); placeCard();
+  if(first){ first = false; window.aptLoad.update(100, 'Ready to explore'); loadEl.setAttribute('aria-busy','false'); setTimeout(() => loadEl.classList.add('hide'), 250); }
+  requestAnimationFrame(tick);
+}
+// small public API (handy for embedding / deep links)
+window.aptExplorer = { parts: PARTS.map(p => p.id), select, deselect, setView, setHood, setFront, setRear, setUnder, setXray,
+  snap(){ for(const key of ['hood','front','rear','under','lights','steer']) S[key] = S[key+'T']; theta = tTheta; phi = tPhi; radius = tRadius; frameK = sel === null ? 1 + 0.16*Math.max(1.3*S.front, S.rear) + 0.02*S.hood + 0.22*S.under : 1; frameX = sel === null ? 1.8*S.front - 1.0*S.rear + 1.65*S.under : 0;
+    if(sel !== null && follow !== false){ PMAP[sel].anc[follow].getWorldPosition(tmpV); tTarget.copy(CENTER).lerp(tmpV, 0.82); } target.copy(tTarget); } };
+await checkpoint(97, 'Rendering the vehicle…');
+tick();
+})().catch(error => { console.error(error); window.aptLoad.fail(); });
+</script>
+</body>
+</html>
