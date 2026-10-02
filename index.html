@@ -85,28 +85,6 @@ body.night .top h1,body.night .top .eyebrow{color:#eef1f5}
 .card-nav button{border:0;background:transparent;font-weight:700;font-size:13px;padding:6px 8px;border-radius:8px}
 .card-nav button:hover{background:var(--line)}
 
-/* parts drawer */
-.drawer{position:fixed;z-index:4;left:18px;top:18px;width:260px;bottom:calc(var(--panelH,150px) + 30px);border-radius:18px;display:flex;flex-direction:column;
-  transform:translateX(-12px);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
-.drawer.on{opacity:1;transform:none;pointer-events:auto}
-.drawer-head{display:flex;justify-content:space-between;align-items:center;padding:12px 12px 6px 16px;font-size:15px}
-.drawer-toggle{display:flex;align-items:center;justify-content:center;width:32px;height:32px;margin:-4px -4px -4px 0;border:0;border-radius:9px;background:transparent;color:var(--muted)}
-.drawer-toggle:hover{background:var(--line);color:var(--text)}
-.drawer-toggle:focus-visible{outline:2px solid #1554c0;outline-offset:1px}
-.drawer-toggle svg{width:18px;height:18px;fill:currentColor;transition:transform .2s}
-.drawer.folded{bottom:auto}
-.drawer.folded .drawer-head{padding-bottom:12px}
-.drawer.folded .search,.drawer.folded #partList{display:none}
-.drawer.folded .drawer-toggle svg{transform:rotate(180deg)}
-.search{margin:4px 12px 8px;padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--chip);color:var(--text);font:inherit;font-size:13px}
-#partList{overflow:auto;padding:0 8px 10px}
-.grp{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:12px 8px 4px}
-.row-part{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:0;background:transparent;border-radius:10px;padding:8px;font-size:13.5px;font-weight:600}
-.row-part:hover{background:var(--line)}
-.row-part.sel{background:rgba(224,31,32,.1);color:var(--accent)}
-.row-part .n{flex:none;width:22px;height:22px;border-radius:50%;background:var(--line);font-size:11px;display:grid;place-items:center;font-weight:700}
-.row-part.sel .n{background:var(--accent);color:#fff}
-.row-part small{margin-left:auto;font-size:11px;color:var(--muted);font-weight:600}
 
 /* bottom panel */
 .panel{position:fixed;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:3;width:min(820px,calc(100% - 32px));border-radius:18px;padding:10px 12px 12px}
@@ -150,7 +128,6 @@ body.night .top h1,body.night .top .eyebrow{color:#eef1f5}
   .top{padding:14px 16px}
   h1{font-size:18px}
   .card{left:12px;right:12px;width:auto;top:auto;bottom:calc(var(--panelH,150px) + 24px);max-height:46vh;transform:translateY(12px)}
-  .drawer{left:12px;right:12px;width:auto}
   .slider input{width:90px}
   .paint-name{display:none}
   .chipbtn{padding:7px 9px;font-size:12px}
@@ -158,7 +135,6 @@ body.night .top h1,body.night .top .eyebrow{color:#eef1f5}
 
 /* Touch-first phone layout, including phones rotated to landscape. */
 @media (max-width:680px), (max-width:1000px) and (pointer:coarse){
-  .drawer{display:none!important}
   .top{padding:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left));gap:8px}
   .brand-logo{width:112px;border-radius:9px}
   .top h1{font-size:16px}.top .eyebrow{font-size:10px}
@@ -171,7 +147,6 @@ body.night .top h1,body.night .top .eyebrow{color:#eef1f5}
   .pin .dot{width:36px;height:36px;left:-18px;top:-18px}
 }
 @media (orientation:landscape) and (max-height:600px) and (pointer:coarse){
-  .drawer{display:none!important}
   .top h1{font-size:14px}.brand-logo{width:90px}
   .card{left:auto;right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));bottom:calc(var(--panelH,64px) + 18px);width:240px;max-height:none;padding:10px;transform:translateX(12px)}
   .card h2{font-size:16px}.card p,.why p{font-size:13px}.card-nav{margin-top:4px;padding-top:0}
@@ -213,30 +188,26 @@ body.night .top h1,body.night .top .eyebrow{color:#eef1f5}
 .shop-parts:hover{background:#bf191a}
 .shop-parts:focus-visible{outline:3px solid #002250;outline-offset:3px}
 
-@media(min-width:681px){.drawer{top:calc(max(12px,env(safe-area-inset-top)) + 12px)}.card{top:calc(max(12px,env(safe-area-inset-top)) + 12px);max-height:calc(100dvh - var(--panelH,150px) - 60px)}}
+@media(min-width:681px){.card{top:calc(max(12px,env(safe-area-inset-top)) + 12px);max-height:calc(100dvh - var(--panelH,150px) - 60px)}}
 @media(max-width:680px),(max-width:1000px) and (pointer:coarse){.card{top:auto;max-height:34dvh}}
 @media(orientation:landscape) and (max-height:600px) and (pointer:coarse){.card{top:calc(max(12px,env(safe-area-inset-top)) + 10px);max-height:none}}
 
-/* vehicle type picker */
-.vtype{position:fixed;z-index:5;top:max(18px,env(safe-area-inset-top));left:50%;transform:translateX(-50%)}
-.vtype-btn{display:flex;align-items:center;gap:10px;border-radius:14px;padding:6px 12px 6px 6px;font-size:14px;font-weight:700;color:var(--navy);min-height:44px}
-.vtype-btn .lbl{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15}
-.vtype-btn .lbl small{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
-.vtype-btn .caret{width:16px;height:16px;fill:var(--muted);transition:transform .15s}
-.vtype-btn[aria-expanded="true"] .caret{transform:rotate(180deg)}
-.vtype-btn:focus-visible,.vtype-opt:focus-visible{outline:2px solid #1554c0;outline-offset:2px}
-.vtype-ico{flex:none;width:34px;height:34px;border-radius:10px;background:rgba(224,31,32,.1);display:grid;place-items:center}
-.vtype-ico svg{width:20px;height:20px;fill:var(--accent)}
-.vtype-menu{position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);min-width:230px;padding:6px;border-radius:14px;background:var(--solid);border:1px solid var(--line);box-shadow:var(--shadow);list-style:none}
-.vtype-menu[hidden]{display:none}
-.vtype-opt{display:flex;align-items:center;gap:12px;padding:6px 10px 6px 6px;border-radius:10px;font-size:14px;font-weight:700;color:var(--navy);cursor:pointer;outline:none}
-.vtype-opt:hover,.vtype-opt.active{background:var(--line)}
-.vtype-opt[aria-selected="true"]{background:rgba(224,31,32,.08)}
-.vtype-opt[aria-selected="true"]::after{content:"✓";margin-left:auto;color:var(--accent);font-weight:800}
-.vtype-opt[aria-disabled="true"]{cursor:default;color:var(--muted)}
-.vtype-opt[aria-disabled="true"] .vtype-ico{filter:grayscale(1);opacity:.6}
-.vtype-opt .soon{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--line);border-radius:999px;padding:3px 7px}
-@media (max-width:680px), (max-width:1000px) and (pointer:coarse){.vtype{top:max(10px,env(safe-area-inset-top))}}
+/* vehicle type picker: four cards in a row */
+.vtype{position:fixed;z-index:5;top:max(18px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);display:flex;gap:6px;padding:6px;border-radius:16px;max-width:calc(100vw - 24px)}
+.vtype-opt{display:flex;align-items:center;gap:10px;min-height:48px;padding:6px 14px 6px 6px;border:1.5px solid transparent;border-radius:12px;background:transparent;font-size:14px;font-weight:700;color:var(--muted);white-space:nowrap;transition:background .15s,border-color .15s,color .15s}
+.vtype-opt:hover{background:var(--line);color:var(--navy)}
+.vtype-opt[aria-checked="true"]{background:rgba(224,31,32,.08);border-color:rgba(224,31,32,.45);color:var(--navy)}
+.vtype-opt:focus-visible{outline:2px solid #1554c0;outline-offset:2px}
+.vtype-ico{flex:none;width:36px;height:36px;border-radius:10px;background:rgba(224,31,32,.1);display:grid;place-items:center}
+.vtype-ico svg{width:21px;height:21px;fill:var(--accent)}
+.vtype-opt[aria-checked="false"] .vtype-ico{background:var(--line)}
+.vtype-opt[aria-checked="false"] .vtype-ico svg{fill:var(--muted)}
+.vtype-opt:hover .vtype-ico svg{fill:var(--accent)}
+@media (max-width:680px), (max-width:1000px) and (pointer:coarse){
+  .vtype{top:max(10px,env(safe-area-inset-top));gap:2px;padding:4px}
+  .vtype-opt{flex-direction:column;gap:3px;min-height:44px;padding:5px 8px;font-size:11px}
+  .vtype-ico{width:30px;height:30px}.vtype-ico svg{width:18px;height:18px}
+}
 </style>
 </head>
 <body>
@@ -246,89 +217,32 @@ body.night .top h1,body.night .top .eyebrow{color:#eef1f5}
 <div id="tip" class="tip"></div>
 
 <h1 class="sr-only">APT 3D Parts Explorer</h1>
-<div class="vtype" id="vtype">
-  <button class="vtype-btn glass" id="vtypeBtn" aria-haspopup="listbox" aria-expanded="false" aria-controls="vtypeMenu">
-    <span id="vtypeIco"><span class="vtype-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 5H3c-1.1 0-2 .89-2 2v9h2c0 1.65 1.34 3 3 3s3-1.35 3-3h5.5c0 1.65 1.34 3 3 3s3-1.35 3-3H23v-5l-6-6zM3 11V7h4v4H3zm3 6.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM13 11H9V7h4v4zm4.5 6.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM15 11V7h1l4 4h-5z"/></svg></span></span>
-    <span class="lbl"><small>Vehicle type</small><span id="vtypeName">SUV</span></span>
-    <svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5z"/></svg>
-  </button>
-  <ul class="vtype-menu" id="vtypeMenu" role="listbox" aria-label="Choose a vehicle type" tabindex="-1" hidden>
-    <li class="vtype-opt" role="option" id="vt-sedan" data-type="sedan" aria-selected="false"><span class="vtype-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg></span><span>Sedan</span></li>
-    <li class="vtype-opt" role="option" id="vt-suv" data-type="suv" aria-selected="true"><span class="vtype-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 5H3c-1.1 0-2 .89-2 2v9h2c0 1.65 1.34 3 3 3s3-1.35 3-3h5.5c0 1.65 1.34 3 3 3s3-1.35 3-3H23v-5l-6-6zM3 11V7h4v4H3zm3 6.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM13 11H9V7h4v4zm4.5 6.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM15 11V7h1l4 4h-5z"/></svg></span><span>SUV</span></li>
-    <li class="vtype-opt" role="option" id="vt-pickup" data-type="pickup" aria-selected="false"><span class="vtype-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></span><span>Pickup</span></li>
-    <li class="vtype-opt" role="option" id="vt-convertible" data-type="convertible" aria-selected="false"><span class="vtype-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg></span><span>Convertible</span></li>
-  </ul>
+<div class="vtype glass" id="vtype" role="radiogroup" aria-label="Vehicle type">
+  <button class="vtype-opt" role="radio" data-type="sedan" aria-checked="false" tabindex="-1"><span class="vtype-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg></span><span>Sedan</span></button>
+  <button class="vtype-opt" role="radio" data-type="suv" aria-checked="true" tabindex="0"><span class="vtype-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 5H3c-1.1 0-2 .89-2 2v9h2c0 1.65 1.34 3 3 3s3-1.35 3-3h5.5c0 1.65 1.34 3 3 3s3-1.35 3-3H23v-5l-6-6zM3 11V7h4v4H3zm3 6.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM13 11H9V7h4v4zm4.5 6.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM15 11V7h1l4 4h-5z"/></svg></span><span>SUV</span></button>
+  <button class="vtype-opt" role="radio" data-type="pickup" aria-checked="false" tabindex="-1"><span class="vtype-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></span><span>Pickup</span></button>
+  <button class="vtype-opt" role="radio" data-type="convertible" aria-checked="false" tabindex="-1"><span class="vtype-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg></span><span>Convertible</span></button>
 </div>
 <script>
 (() => {
-  const btn = document.getElementById('vtypeBtn'), menu = document.getElementById('vtypeMenu');
-  const opts = [...menu.querySelectorAll('.vtype-opt')];
-  let active = -1;
-  const setActive = i => {
-    opts.forEach(o => o.classList.remove('active'));
-    active = i; opts[i].classList.add('active');
-    menu.setAttribute('aria-activedescendant', opts[i].id);
-  };
-  const open = () => {
-    menu.hidden = false; btn.setAttribute('aria-expanded', 'true');
-    setActive(Math.max(0, opts.findIndex(o => o.getAttribute('aria-selected') === 'true')));
-    menu.focus();
-  };
-  const close = (refocus = true) => {
-    menu.hidden = true; btn.setAttribute('aria-expanded', 'false');
-    if (refocus) btn.focus();
-  };
-  const show = o => {
-    opts.forEach(x => x.setAttribute('aria-selected', x === o ? 'true' : 'false'));
-    document.getElementById('vtypeName').textContent = o.querySelector('span:not(.vtype-ico):not(.soon)').textContent;
-    document.getElementById('vtypeIco').innerHTML = o.querySelector('.vtype-ico').outerHTML;
-  };
+  const opts = [...document.querySelectorAll('#vtype .vtype-opt')];
+  const show = o => opts.forEach(x => { const on = x === o; x.setAttribute('aria-checked', String(on)); x.tabIndex = on ? 0 : -1; });
   const choose = o => {
-    if (o.getAttribute('aria-disabled') === 'true') return;
+    if (o.getAttribute('aria-checked') === 'true') return;
     show(o);
     document.dispatchEvent(new CustomEvent('vehicletypechange', { detail: o.dataset.type }));
-    close();
   };
-  // keeps the button in step when the type is changed from script (window.aptExplorer.setVariant)
-  window.aptShowVehicleType = type => { const o = opts.find(x => x.dataset.type === type); if (o) show(o); };
-  btn.addEventListener('click', () => menu.hidden ? open() : close());
   opts.forEach((o, i) => {
     o.addEventListener('click', () => choose(o));
-    o.addEventListener('mousemove', () => setActive(i));
+    o.addEventListener('keydown', e => {
+      const step = {ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1}[e.key];
+      if (!step) return;
+      e.preventDefault();
+      const n = opts[(i + step + opts.length) % opts.length]; n.focus(); choose(n);
+    });
   });
-  menu.addEventListener('keydown', e => {
-    if (e.key === 'ArrowDown') { e.preventDefault(); setActive((active + 1) % opts.length); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((active - 1 + opts.length) % opts.length); }
-    else if (e.key === 'Home') { e.preventDefault(); setActive(0); }
-    else if (e.key === 'End') { e.preventDefault(); setActive(opts.length - 1); }
-    else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(opts[active]); }
-    else if (e.key === 'Escape') { e.preventDefault(); close(); }
-    else if (e.key === 'Tab') close(false);
-  });
-  document.addEventListener('pointerdown', e => {
-    if (!menu.hidden && !document.getElementById('vtype').contains(e.target)) close(false);
-  });
-})();
-</script>
-<aside id="drawer" class="drawer glass on" aria-label="Parts list">
-  <div class="drawer-head"><strong id="drawerTitle">All parts</strong><button class="drawer-toggle" id="drawerToggle" aria-expanded="true" aria-controls="drawerBody" aria-label="Hide parts list" title="Hide parts list"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.41 15.41 12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg></button></div>
-  <div id="drawerBody" style="display:contents">
-  <input id="search" class="search" type="search" placeholder="Search parts…" aria-label="Search parts">
-  <div id="partList"></div>
-  </div>
-</aside>
-<script>
-(() => {
-  const d = document.getElementById('drawer'), t = document.getElementById('drawerToggle');
-  const set = folded => {
-    d.classList.toggle('folded', folded);
-    t.setAttribute('aria-expanded', String(!folded));
-    const label = folded ? 'Show parts list' : 'Hide parts list';
-    t.setAttribute('aria-label', label); t.title = label;
-    try { localStorage.setItem('aptDrawerFolded', folded ? '1' : '0'); } catch (e) {}
-  };
-  try { if (localStorage.getItem('aptDrawerFolded') === '1') set(true); } catch (e) {}
-  t.addEventListener('click', () => set(!d.classList.contains('folded')));
+  // keeps the cards in step when the type is changed from script (window.aptExplorer.setVariant)
+  window.aptShowVehicleType = type => { const o = opts.find(x => x.dataset.type === type); if (o) show(o); };
 })();
 </script>
 
@@ -1878,7 +1792,7 @@ const zoomMin = () => Math.max(1.4, fitR*0.24), zoomMax = () => fitR*2.6;
 
 /* ================= DOM ================= */
 const $ = s => document.querySelector(s);
-const panel = $('#panel'), card = $('#card'), drawer = $('#drawer'), tip = $('#tip'), pinsEl = $('#pins');
+const panel = $('#panel'), card = $('#card'), tip = $('#tip'), pinsEl = $('#pins');
 
 PARTS.forEach(p => {
   const b = document.createElement('button');
@@ -1887,23 +1801,6 @@ PARTS.forEach(p => {
   b.addEventListener('click', e => { e.stopPropagation(); select(p.id); });
   pinsEl.appendChild(b); p.el = b;
 });
-
-const list = $('#partList');
-CATS.forEach(c => {
-  const h = document.createElement('div'); h.className = 'grp'; h.textContent = c; list.appendChild(h);
-  PARTS.filter(p => p.cat === c).forEach(p => {
-    const r = document.createElement('button'); r.className = 'row-part'; r.dataset.id = p.id; r.dataset.cat = c;
-    r.innerHTML = `<span class="n">${p.num}</span><span>${p.name}</span>${p.needs ? '<small>inside</small>' : ''}`;
-    r.addEventListener('click', () => select(p.id));
-    list.appendChild(r); p.row = r;
-  });
-});
-$('#search').addEventListener('input', e => {
-  const q = e.target.value.trim().toLowerCase();
-  [...list.children].forEach(el => { if(el.classList.contains('row-part')) el.style.display = !q || PMAP[el.dataset.id].name.toLowerCase().includes(q) || el.dataset.cat.toLowerCase().includes(q) ? '' : 'none'; });
-  [...list.querySelectorAll('.grp')].forEach(g => { let n = g.nextElementSibling, any = false; while(n && !n.classList.contains('grp')){ if(n.style.display !== 'none') any = true; n = n.nextElementSibling; } g.style.display = any ? '' : 'none'; });
-});
-
 
 /* explore controls */
 const bHood = $('#tHood'), sFront = $('#sFront'), sRear = $('#sRear');
@@ -2016,15 +1913,14 @@ function focusPart(p){
 }
 function select(id){
   const p = PMAP[id]; if(!p) return;
-  if(sel && sel !== id){ setVis(sel, null); PMAP[sel].el.classList.remove('sel'); PMAP[sel].row.classList.remove('sel'); }
-  sel = id; setVis(id, 'sel'); p.el.classList.add('sel'); p.row.classList.add('sel');
-  p.row.scrollIntoView({block:'nearest'});
+  if(sel && sel !== id){ setVis(sel, null); PMAP[sel].el.classList.remove('sel'); }
+  sel = id; setVis(id, 'sel'); p.el.classList.add('sel');
   if(p.needs){ if(p.needs.under) setUnder(true); if(p.needs.hood) setHood(true); if(p.needs.front) setFront(1); if(p.needs.rear) setRear(1); }
   setAuto(false); focusPart(p); fillCard(p); card.classList.add('on');
 }
 function deselect(){
   if(!sel) return;
-  const p = PMAP[sel]; setVis(sel, null); p.el.classList.remove('sel'); p.row.classList.remove('sel');
+  const p = PMAP[sel]; setVis(sel, null); p.el.classList.remove('sel');
   sel = null; follow = false; tTarget.copy(CENTER); tRadius = Math.max(tRadius, fitR*HOME); closeCard();
 }
 $('#cardClose').addEventListener('click', deselect);
@@ -2120,8 +2016,7 @@ function resize(){
   tRadius *= nf / fitR; radius *= nf / fitR; fitR = nf;
   const ph = panel.offsetHeight; document.documentElement.style.setProperty('--panelH', ph + 'px');
   baseShift = Math.max(0, (ph + 16 - 70) / 2);
-  // centre the scene in the space to the right of the parts sidebar
-  sideX = !mobileUI() ? -Math.round(drawer.getBoundingClientRect().right / 2) : 0;
+  sideX = 0;
   applyShift(true);
 }
 window.addEventListener('resize', resize); resize();
@@ -2189,7 +2084,7 @@ function placeCard(){
   }
   const p = PMAP[sel], w = innerWidth, cw = card.offsetWidth, ch = card.offsetHeight;
   const lbl = p.el.querySelector('.lbl'), gap = (lbl ? lbl.offsetWidth : 0) + 34;
-  const minX = drawer.getBoundingClientRect().right + 16, maxX = w - cw - 16;
+  const minX = 16, maxX = w - cw - 16;
   const minY = 18, maxY = (panel.offsetHeight ? panel.getBoundingClientRect().top : innerHeight) - ch - 16;
   let x = p.sx + gap; if(x > maxX) x = p.sx - 28 - cw;
   x = clamp(x, minX, Math.max(minX, maxX));
